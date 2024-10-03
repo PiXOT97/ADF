@@ -1,0 +1,393 @@
+{
+	"name": "pl_ResetLandingZone",
+	"properties": {
+		"activities": [
+			{
+				"name": "ForEach_LZ_input_new",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "LZ_input_new",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('LZ_input_new').output.childItems",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Clear-LZ-INPUT-NEW",
+							"type": "Delete",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "AAA_ResetLandingZone",
+									"type": "DatasetReference",
+									"parameters": {
+										"FilePath": "landing_zone/transaction_data/input/new",
+										"FileName": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								},
+								"enableLogging": false,
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "LZ_input_new",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "AAA_ResetLandingZone",
+						"type": "DatasetReference",
+						"parameters": {
+							"FilePath": "landing_zone/transaction_data/input/new",
+							"FileName": "*"
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "BR_PARQUET",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "AAA_ResetLandingZone",
+						"type": "DatasetReference",
+						"parameters": {
+							"FilePath": "bronze/transaction_data/parquet",
+							"FileName": "*"
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "LZ_RAW_PROC",
+				"type": "GetMetadata",
+				"dependsOn": [
+					{
+						"activity": "ForEach_LZ_input_new_copy2",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "AAA_ResetLandingZone",
+						"type": "DatasetReference",
+						"parameters": {
+							"FilePath": "landing_zone/transaction_data/raw/processed",
+							"FileName": "*"
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "TRANSFER_RAW_NEW",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "LZ_RAW_PROC",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('LZ_RAW_PROC').output.childItems",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "LZ-RAW-PROCESSSEDTORAW_copy1",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"deleteFilesAfterCompletion": true
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "PreserveHierarchy"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "AAA_ResetLandingZone",
+									"type": "DatasetReference",
+									"parameters": {
+										"FilePath": "landing_zone/transaction_data/raw/processed",
+										"FileName": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "AAA_ResetLandingZone",
+									"type": "DatasetReference",
+									"parameters": {
+										"FilePath": "landing_zone/transaction_data/raw/new",
+										"FileName": "@item().name"
+									}
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "ForEach_LZ_input_new_copy1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "BR_PARQUET",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('BR_PARQUET').output.childItems",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Clear-LZ-INPUT-NEW_copy1",
+							"type": "Delete",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "AAA_ResetLandingZone",
+									"type": "DatasetReference",
+									"parameters": {
+										"FilePath": "bronze/transaction_data/parquet",
+										"FileName": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								},
+								"enableLogging": false,
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "ForEach_LZ_input_new_copy2",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "LZ_RAW_NEW",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('LZ_RAW_NEW').output.childItems",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Clear-LZ-INPUT-NEW_copy2",
+							"type": "Delete",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "AAA_ResetLandingZone",
+									"type": "DatasetReference",
+									"parameters": {
+										"FilePath": "landing_zone/transaction_data/raw/new",
+										"FileName": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								},
+								"enableLogging": false,
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "LZ_RAW_NEW",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "AAA_ResetLandingZone",
+						"type": "DatasetReference",
+						"parameters": {
+							"FilePath": "landing_zone/transaction_data/raw/new",
+							"FileName": "*"
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			}
+		],
+		"folder": {
+			"name": "reset"
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-10-03T10:55:21Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

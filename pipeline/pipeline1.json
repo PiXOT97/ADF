@@ -1,0 +1,203 @@
+{
+	"name": "pipeline1",
+	"properties": {
+		"activities": [
+			{
+				"name": "GetDayFolders",
+				"description": "Get the subfolders of Medallion main folder",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_ADLS_Medallion",
+						"type": "DatasetReference",
+						"parameters": {
+							"Stage": "bronze/transaction_data/parquet/new/YearColumn=2024/MonthColumn=5"
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEachDayFolder",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "GetDayFolders",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('GetDayFolders').output.childItems",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "CheckForParquet",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "GetFiles",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@greater(length(activity('GetFiles').output.childItems), 1)\n",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "FileDoesNotExist",
+										"type": "Wait",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"waitTimeInSeconds": 1
+										}
+									}
+								],
+								"ifTrueActivities": [
+									{
+										"name": "FileExist",
+										"type": "Wait",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"waitTimeInSeconds": 1
+										}
+									},
+									{
+										"name": "Data flow1",
+										"type": "ExecuteDataFlow",
+										"dependsOn": [
+											{
+												"activity": "FileExist",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"dataflow": {
+												"referenceName": "dataflow1",
+												"type": "DataFlowReference",
+												"datasetParameters": {
+													"InputSource": {
+														"FolderPath": "@concat('bronze/transaction_data/parquet/new/YearColumn=2024/MonthColumn=5/',item().name)"
+													},
+													"OutputSource": {
+														"FolderPath": {
+															"value": "@concat('silver/transaction_data/parquet/new/YearColumn=2024/MonthColumn=5/',item().name)",
+															"type": "Expression"
+														}
+													}
+												},
+												"linkedServiceParameters": {
+													"InputSource": {
+														"schemaLinkedService": {
+															"FolderPath": {
+																"value": "@concat('silver/transaction_data/parquet/new/YearColumn=2024/MonthColumn=5/',item().name)",
+																"type": "Expression"
+															}
+														}
+													}
+												}
+											},
+											"compute": {
+												"coreCount": 16,
+												"computeType": "General"
+											},
+											"traceLevel": "Fine"
+										}
+									}
+								]
+							}
+						},
+						{
+							"name": "GetFiles",
+							"description": "Get the subfolders of Medallion main folder",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "ds_ADLS_Medallion",
+									"type": "DatasetReference",
+									"parameters": {
+										"Stage": {
+											"value": "@concat('bronze/transaction_data/parquet/new/YearColumn=2024/MonthColumn=5/',item().name)",
+											"type": "Expression"
+										}
+									}
+								},
+								"fieldList": [
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"variables": {
+			"MonthFolders": {
+				"type": "Array"
+			},
+			"DayFolders": {
+				"type": "Array"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-10-03T16:03:43Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

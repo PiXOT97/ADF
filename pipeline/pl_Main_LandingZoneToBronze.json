@@ -1,0 +1,327 @@
+{
+	"name": "pl_Main_LandingZoneToBronze",
+	"properties": {
+		"description": "- Check folders for new files\n- Extract ZIP files to CSV\n- Validate Structure/Schema\n- Convert to parquet files",
+		"activities": [
+			{
+				"name": "GetDataFolders",
+				"description": "Get the subfolders of Medallion main folder",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_ADLS_Medallion",
+						"type": "DatasetReference",
+						"parameters": {
+							"Stage": "landing_zone"
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "LoopDataFolders",
+				"description": "For each \"_data\" folder in Medallion",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "GetDataFolders",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('GetDataFolders').output.childItems",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "GetFilesRawNew",
+							"description": "Check for file in each folder in medallion, if we have file, in location: landing_zone/raw/new",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "ds_ADLS_BinaryPathFilename",
+									"type": "DatasetReference",
+									"parameters": {
+										"FolderPath": {
+											"value": "@concat('landing_zone/', item().name, '/raw/new')",
+											"type": "Expression"
+										},
+										"FileName": "*"
+									}
+								},
+								"fieldList": [
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							}
+						},
+						{
+							"name": "CheckForFilesZip",
+							"type": "IfCondition",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [
+								{
+									"activity": "GetFilesRawNew",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@and(\n    greater(length(activity('GetFilesRawNew').output.childItems), 0),\n    contains(join(activity('GetFilesRawNew').output.childItems, ','), '.zip')\n)\n",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "NotFileFound",
+										"type": "SetVariable",
+										"dependsOn": [],
+										"policy": {
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "FileFound",
+											"value": false
+										}
+									}
+								],
+								"ifTrueActivities": [
+									{
+										"name": "pl_UnzipFilesNew",
+										"description": "Unzip the files in current folder",
+										"type": "ExecutePipeline",
+										"dependsOn": [
+											{
+												"activity": "FileFound",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"pipeline": {
+												"referenceName": "pl_UnzipFilesRaw",
+												"type": "PipelineReference"
+											},
+											"waitOnCompletion": true,
+											"parameters": {
+												"FolderPath": {
+													"value": "@concat('landing_zone/', item().name)",
+													"type": "Expression"
+												},
+												"FolderData": {
+													"value": "@item().name",
+													"type": "Expression"
+												},
+												"FileArray": {
+													"value": "@activity('GetFilesRawNew').output.childItems",
+													"type": "Expression"
+												}
+											}
+										}
+									},
+									{
+										"name": "FileFound",
+										"type": "SetVariable",
+										"dependsOn": [],
+										"policy": {
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "FileFound",
+											"value": true
+										}
+									}
+								]
+							}
+						},
+						{
+							"name": "CheckForCSVFIles",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "GetFilesInputNew",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@greater(length(activity('GetFilesInputNew').output.childItems), 0)",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "CSVNotFound",
+										"type": "Wait",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"waitTimeInSeconds": 1
+										}
+									}
+								],
+								"ifTrueActivities": [
+									{
+										"name": "pl_CSVToParquet",
+										"description": "Process the CSV file and output the Parquet file.",
+										"type": "ExecutePipeline",
+										"dependsOn": [
+											{
+												"activity": "CSVFound",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"pipeline": {
+												"referenceName": "pl_CSVToParquet",
+												"type": "PipelineReference"
+											},
+											"waitOnCompletion": true,
+											"parameters": {
+												"FolderInput": {
+													"value": "@concat('landing_zone/',item().name,'/input/new')",
+													"type": "Expression"
+												},
+												"FolderOutput": {
+													"value": "@concat('bronze/',item().name,'/parquet/new')",
+													"type": "Expression"
+												},
+												"FolderData": {
+													"value": "@item().name",
+													"type": "Expression"
+												}
+											}
+										}
+									},
+									{
+										"name": "CSVFound",
+										"type": "Wait",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"waitTimeInSeconds": 1
+										}
+									}
+								]
+							}
+						},
+						{
+							"name": "GetFilesInputNew",
+							"type": "GetMetadata",
+							"dependsOn": [
+								{
+									"activity": "CheckForFilesZip",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "ds_ADLS_BinaryPathFilename",
+									"type": "DatasetReference",
+									"parameters": {
+										"FolderPath": {
+											"value": "@concat('landing_zone/', item().name, '/input/new')",
+											"type": "Expression"
+										},
+										"FileName": "*"
+									}
+								},
+								"fieldList": [
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"variables": {
+			"FileFound": {
+				"type": "Boolean"
+			}
+		},
+		"folder": {
+			"name": "pl_LzToBronze"
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-10-03T16:32:48Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

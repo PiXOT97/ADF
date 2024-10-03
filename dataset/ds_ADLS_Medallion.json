@@ -1,0 +1,30 @@
+{
+	"name": "ds_ADLS_Medallion",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "az_ADLS_adftestsa0",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"Stage": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "ds_LzToBronze"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": {
+					"value": "@dataset().Stage",
+					"type": "Expression"
+				},
+				"fileSystem": "medallion"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

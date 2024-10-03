@@ -1,0 +1,144 @@
+{
+	"name": "df_Transactions_CSVToParquet",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_ADLS_ValidationCSV",
+						"type": "DatasetReference"
+					},
+					"name": "SchemaValidationCSV",
+					"description": "Import data from ds_ADLS_ValidationCSV and validate the column"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_ADLS_ParquetBronze",
+						"type": "DatasetReference"
+					},
+					"name": "OutputToParquet"
+				}
+			],
+			"transformations": [
+				{
+					"name": "SchmeaModification",
+					"description": "Change the data type for each input column accordingly"
+				},
+				{
+					"name": "AddTimestampColumn"
+				},
+				{
+					"name": "RemoveNullPrice"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          {Location ID} as string,",
+				"          {Location Name} as string,",
+				"          {Location ExternalId} as string,",
+				"          storeType as string,",
+				"          {Client ID} as string,",
+				"          {Created At} as string,",
+				"          {Action Type} as string,",
+				"          {Transaction ID} as string,",
+				"          {Payment Mode} as string,",
+				"          {Total Time} as string,",
+				"          Quantity as string,",
+				"          {Brand ID} as string,",
+				"          {Brand Name} as string,",
+				"          Price as string,",
+				"          Discount as string,",
+				"          {Price With Discount} as string,",
+				"          {Price With Out Discount} as string,",
+				"          {SKU ID} as string,",
+				"          {SKU Name} as string,",
+				"          {Offer ID} as string,",
+				"          {Offer Name} as string,",
+				"          {Offer Category ID} as string,",
+				"          {Offer Category Name} as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     maxColumns: 200001) ~> SchemaValidationCSV",
+				"SchemaValidationCSV cast(output(",
+				"          {Location ID} as string,",
+				"          {Location Name} as string,",
+				"          {Location ExternalId} as integer,",
+				"          storeType as string,",
+				"          {Client ID} as string,",
+				"          {Created At} as timestamp,",
+				"          {Action Type} as string,",
+				"          {Transaction ID} as long,",
+				"          {Payment Mode} as string,",
+				"          {Total Time} as integer,",
+				"          Quantity as float,",
+				"          {Brand ID} as string,",
+				"          {Brand Name} as string,",
+				"          Price as float,",
+				"          Discount as float,",
+				"          {Price With Discount} as float,",
+				"          {Price With Out Discount} as float,",
+				"          {SKU ID} as string,",
+				"          {SKU Name} as string,",
+				"          {Offer ID} as string,",
+				"          {Offer Name} as string,",
+				"          {Offer Category ID} as string,",
+				"          {Offer Category Name} as string",
+				"     ),",
+				"     errors: true) ~> SchmeaModification",
+				"RemoveNullPrice derive(HopTimestamp = currentTimestamp(),",
+				"          YearColumn = toString(year({Created At})),",
+				"          MonthColumn = toString(month({Created At})),",
+				"          DayColumn = toString(dayOfMonth({Created At}))) ~> AddTimestampColumn",
+				"SchmeaModification filter(!isNull(Price)) ~> RemoveNullPrice",
+				"AddTimestampColumn sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'parquet',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     mapColumn(",
+				"          LocationId = {Location ID},",
+				"          LocationName = {Location Name},",
+				"          LocationExternalId = {Location ExternalId},",
+				"          StoreType = storeType,",
+				"          ClientId = {Client ID},",
+				"          CreatedAt = {Created At},",
+				"          ActionType = {Action Type},",
+				"          TransactionId = {Transaction ID},",
+				"          PaymentMode = {Payment Mode},",
+				"          TotalTime = {Total Time},",
+				"          Quantity,",
+				"          BrandId = {Brand ID},",
+				"          BrandName = {Brand Name},",
+				"          Price,",
+				"          Discount,",
+				"          SalesValue = {Price With Discount},",
+				"          RetailValue = {Price With Out Discount},",
+				"          SkuId = {SKU ID},",
+				"          SkuName = {SKU Name},",
+				"          OfferId = {Offer ID},",
+				"          OfferName = {Offer Name},",
+				"          OfferCategory = {Offer Category ID},",
+				"          OfferCategoryName = {Offer Category Name},",
+				"          HopTimestamp,",
+				"          YearColumn,",
+				"          MonthColumn,",
+				"          DayColumn",
+				"     ),",
+				"     partitionBy('key',",
+				"          0,",
+				"          YearColumn,",
+				"          MonthColumn,",
+				"          DayColumn",
+				"     )) ~> OutputToParquet"
+			]
+		}
+	}
+}

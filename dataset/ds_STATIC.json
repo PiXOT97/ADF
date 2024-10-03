@@ -1,0 +1,24 @@
+{
+	"name": "ds_STATIC",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "az_ADLS_adftestsa0",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "ds_BronzeToSilver"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "bronze/transaction_data/parquet/new/YearColumn=2024/MonthColumn=5/DayColumn=16",
+				"fileSystem": "medallion"
+			},
+			"compressionCodec": "none"
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,293 @@
+{
+	"name": "pl_CSVToParquet",
+	"properties": {
+		"activities": [
+			{
+				"name": "LoopCSVFiles",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "GetCSVFiles",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "GetStructureREF",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('GetCSVFiles').output.childItems",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "CheckForStructureCSV",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "GetStructureCSV",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@equals(activity('GetStructureCSV').output.structure,activity('GetStructureREF').output.structure)",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "StructureFail",
+										"type": "Wait",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"waitTimeInSeconds": 1
+										}
+									}
+								],
+								"ifTrueActivities": [
+									{
+										"name": "df_FileProcessingCSVToParquet",
+										"type": "ExecuteDataFlow",
+										"dependsOn": [
+											{
+												"activity": "StructurePass",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"dataflow": {
+												"referenceName": "df_Transactions_CSVToParquet",
+												"type": "DataFlowReference",
+												"datasetParameters": {
+													"SchemaValidationCSV": {
+														"FolderName": "@pipeline().parameters.FolderInput",
+														"FileName": "@item().name",
+														"Source": "medallion"
+													},
+													"OutputToParquet": {
+														"FolderName": {
+															"value": "@pipeline().parameters.FolderOutput",
+															"type": "Expression"
+														},
+														"Main": "medallion"
+													}
+												}
+											},
+											"integrationRuntime": {
+												"referenceName": "NewIntegrationRuntime",
+												"type": "IntegrationRuntimeReference"
+											},
+											"traceLevel": "Fine",
+											"runConcurrently": true,
+											"continueOnError": true
+										}
+									},
+									{
+										"name": "StructurePass",
+										"type": "Wait",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"waitTimeInSeconds": 1
+										}
+									},
+									{
+										"name": "Clear-LZ-INPUT-NEW",
+										"type": "Delete",
+										"state": "Inactive",
+										"onInactiveMarkAs": "Succeeded",
+										"dependsOn": [
+											{
+												"activity": "df_FileProcessingCSVToParquet",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"dataset": {
+												"referenceName": "AAA_ResetLandingZone",
+												"type": "DatasetReference",
+												"parameters": {
+													"FilePath": {
+														"value": "@concat(pipeline().parameters.FolderData,'/landing_zone/input/new')",
+														"type": "Expression"
+													},
+													"FileName": {
+														"value": "@item().name",
+														"type": "Expression"
+													}
+												}
+											},
+											"enableLogging": false,
+											"storeSettings": {
+												"type": "AzureBlobFSReadSettings",
+												"recursive": true,
+												"enablePartitionDiscovery": false
+											}
+										}
+									}
+								]
+							}
+						},
+						{
+							"name": "GetStructureCSV",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "ds_ADLS_ValidationCSV",
+									"type": "DatasetReference",
+									"parameters": {
+										"FolderName": "@pipeline().parameters.FolderInput",
+										"FileName": "@item().name",
+										"Source": "medallion"
+									}
+								},
+								"fieldList": [
+									"structure"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "GetCSVFiles",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_ADLS_UnzipSource",
+						"type": "DatasetReference",
+						"parameters": {
+							"FolderPath": {
+								"value": "@concat(pipeline().parameters.FolderInput)",
+								"type": "Expression"
+							},
+							"FileName": "*"
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "GetStructureREF",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_ADLS_ValidationCSV",
+						"type": "DatasetReference",
+						"parameters": {
+							"FolderName": "@concat('config/',pipeline().parameters.FolderData)",
+							"FileName": "refschema.csv",
+							"Source": "medallion"
+						}
+					},
+					"fieldList": [
+						"structure"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"FolderInput": {
+				"type": "string",
+				"defaultValue": "transaction_data/landing_zone/input/new"
+			},
+			"FolderOutput": {
+				"type": "string",
+				"defaultValue": "medallion/transaction_data/bronze/parquet"
+			},
+			"FolderData": {
+				"type": "string",
+				"defaultValue": "transaction_data"
+			}
+		},
+		"folder": {
+			"name": "pl_LzToBronze"
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-10-03T12:08:31Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

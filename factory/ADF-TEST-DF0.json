@@ -1,0 +1,15 @@
+{
+	"name": "ADF-TEST-DF0",
+	"location": "westeurope",
+	"identity": {
+		"type": "SystemAssigned,UserAssigned",
+		"principalId": "d07c0c20-17f9-4540-9604-e3fbd0d5c680",
+		"tenantId": "6188df63-da20-4264-89a5-1d73ccb966ec",
+		"userAssignedIdentities": {
+			"/subscriptions/db5e86fd-a3d7-4316-91b6-9268932d56c4/resourcegroups/RG_ADF_TEST/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uami_adf_test": {
+				"clientId": "c8f38daa-51ac-46fa-86b8-89e33b08b992",
+				"principalId": "cbf44908-02ce-403f-bffc-5960c1bb8cca"
+			}
+		}
+	}
+}

@@ -1,0 +1,122 @@
+{
+	"name": "dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_ADLS_ReadParquetFolder",
+						"type": "DatasetReference"
+					},
+					"name": "InputSource"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_ADLS_ReadParquetFolder",
+						"type": "DatasetReference"
+					},
+					"name": "OutputSource"
+				}
+			],
+			"transformations": [
+				{
+					"name": "RemoveNullValues"
+				},
+				{
+					"name": "CalculateMean"
+				},
+				{
+					"name": "CombineData"
+				},
+				{
+					"name": "SelectAllData"
+				},
+				{
+					"name": "ReplaceZeroData"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          LocationId as string,",
+				"          LocationName as string,",
+				"          LocationExternalId as integer,",
+				"          StoreType as string,",
+				"          ClientId as string,",
+				"          CreatedAt as timestamp,",
+				"          ActionType as string,",
+				"          TransactionId as long,",
+				"          PaymentMode as string,",
+				"          TotalTime as integer,",
+				"          Quantity as float,",
+				"          BrandId as string,",
+				"          BrandName as string,",
+				"          Price as float,",
+				"          Discount as float,",
+				"          SalesValue as float,",
+				"          RetailValue as float,",
+				"          SkuId as string,",
+				"          SkuName as string,",
+				"          OfferId as string,",
+				"          OfferName as string,",
+				"          OfferCategory as string,",
+				"          OfferCategoryName as string,",
+				"          HopTimestamp as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'parquet') ~> InputSource",
+				"InputSource filter(!isNull(TransactionId) && !isNull(LocationName) && !isNull(SkuName) && !isNull(OfferName) && !isNull(OfferCategoryName) && !isNull(BrandName) && !isNull(Price)) ~> RemoveNullValues",
+				"RemoveNullValues aggregate(groupBy(SkuName),",
+				"     MeanQuantity = toFloat(avg(Quantity)),",
+				"          MeanSalesValue = toFloat(avg(SalesValue))) ~> CalculateMean",
+				"SelectAllData, CalculateMean join(SelectAllData@SkuName == CalculateMean@SkuName,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> CombineData",
+				"RemoveNullValues select(mapColumn(",
+				"          LocationId,",
+				"          LocationName,",
+				"          LocationExternalId,",
+				"          StoreType,",
+				"          ClientId,",
+				"          CreatedAt,",
+				"          ActionType,",
+				"          TransactionId,",
+				"          PaymentMode,",
+				"          TotalTime,",
+				"          Quantity,",
+				"          BrandId,",
+				"          BrandName,",
+				"          Price,",
+				"          Discount,",
+				"          SalesValue,",
+				"          RetailValue,",
+				"          SkuId,",
+				"          SkuName,",
+				"          OfferId,",
+				"          OfferName,",
+				"          OfferCategory,",
+				"          OfferCategoryName,",
+				"          HopTimestamp",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> SelectAllData",
+				"CombineData derive(Quantity = iif(Quantity == 0, MeanQuantity, Quantity),",
+				"          SalesValue = iif(SalesValue== 0, MeanSalesValue, SalesValue)) ~> ReplaceZeroData",
+				"ReplaceZeroData sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'parquet',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> OutputSource"
+			]
+		}
+	}
+}

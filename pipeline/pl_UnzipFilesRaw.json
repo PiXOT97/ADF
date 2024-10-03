@@ -1,0 +1,296 @@
+{
+	"name": "pl_UnzipFilesRaw",
+	"properties": {
+		"activities": [
+			{
+				"name": "ForEachFileInRawNew",
+				"description": "Loop through all the files in Raw/New",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.FileArray",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "CheckFileIsZip",
+							"description": "Check if the current file is ZIP",
+							"type": "IfCondition",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@endswith(item().name, '.zip')",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "Ext_Val_Error",
+										"type": "Wait",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"waitTimeInSeconds": 1
+										}
+									},
+									{
+										"name": "MoveFileToError",
+										"type": "Copy",
+										"dependsOn": [
+											{
+												"activity": "Ext_Val_Error",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "BinarySource",
+												"storeSettings": {
+													"type": "AzureBlobFSReadSettings",
+													"recursive": false,
+													"deleteFilesAfterCompletion": true
+												},
+												"formatSettings": {
+													"type": "BinaryReadSettings"
+												}
+											},
+											"sink": {
+												"type": "BinarySink",
+												"storeSettings": {
+													"type": "AzureBlobFSWriteSettings",
+													"copyBehavior": "PreserveHierarchy"
+												}
+											},
+											"enableStaging": false
+										},
+										"inputs": [
+											{
+												"referenceName": "ds_ADLS_BinaryPathFilename",
+												"type": "DatasetReference",
+												"parameters": {
+													"FolderPath": {
+														"value": "@concat(pipeline().parameters.FolderPath,'/raw/new')",
+														"type": "Expression"
+													},
+													"FileName": "@item().name"
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "ds_ADLS_BinaryPathFilename",
+												"type": "DatasetReference",
+												"parameters": {
+													"FolderPath": {
+														"value": "@concat(pipeline().parameters.FolderPath,'/raw/errors')",
+														"type": "Expression"
+													},
+													"FileName": "@item().name"
+												}
+											}
+										]
+									}
+								],
+								"ifTrueActivities": [
+									{
+										"name": "Ext_Val_Good",
+										"type": "Wait",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"waitTimeInSeconds": 1
+										}
+									},
+									{
+										"name": "UnzipCurrentFile",
+										"description": "Execute the unzip of the current file into \"current_data_folder/landing_zone/input/new\"",
+										"type": "Copy",
+										"dependsOn": [
+											{
+												"activity": "Ext_Val_Good",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "DelimitedTextSource",
+												"storeSettings": {
+													"type": "AzureBlobFSReadSettings",
+													"recursive": true,
+													"enablePartitionDiscovery": false
+												},
+												"formatSettings": {
+													"type": "DelimitedTextReadSettings",
+													"compressionProperties": {
+														"type": "ZipDeflateReadSettings"
+													}
+												}
+											},
+											"sink": {
+												"type": "DelimitedTextSink",
+												"storeSettings": {
+													"type": "AzureBlobFSWriteSettings",
+													"copyBehavior": "FlattenHierarchy"
+												},
+												"formatSettings": {
+													"type": "DelimitedTextWriteSettings",
+													"quoteAllText": true,
+													"fileExtension": ".txt"
+												}
+											},
+											"enableStaging": false,
+											"translator": {
+												"type": "TabularTranslator",
+												"typeConversion": true,
+												"typeConversionSettings": {
+													"allowDataTruncation": true,
+													"treatBooleanAsNumber": false
+												}
+											}
+										},
+										"inputs": [
+											{
+												"referenceName": "ds_ADLS_UnzipSource",
+												"type": "DatasetReference",
+												"parameters": {
+													"FolderPath": {
+														"value": "@concat(pipeline().parameters.FolderPath,'/raw/new')",
+														"type": "Expression"
+													},
+													"FileName": "@item().name"
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "ds_ADLS_UnzipDestination",
+												"type": "DatasetReference",
+												"parameters": {
+													"FolderPath": {
+														"value": "@concat(pipeline().parameters.FolderPath,'/input/new')",
+														"type": "Expression"
+													}
+												}
+											}
+										]
+									},
+									{
+										"name": "MoveFileToSuccess",
+										"type": "Copy",
+										"dependsOn": [
+											{
+												"activity": "UnzipCurrentFile",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "BinarySource",
+												"storeSettings": {
+													"type": "AzureBlobFSReadSettings",
+													"recursive": false,
+													"deleteFilesAfterCompletion": true
+												},
+												"formatSettings": {
+													"type": "BinaryReadSettings"
+												}
+											},
+											"sink": {
+												"type": "BinarySink",
+												"storeSettings": {
+													"type": "AzureBlobFSWriteSettings",
+													"copyBehavior": "PreserveHierarchy"
+												}
+											},
+											"enableStaging": false
+										},
+										"inputs": [
+											{
+												"referenceName": "ds_ADLS_BinaryPathFilename",
+												"type": "DatasetReference",
+												"parameters": {
+													"FolderPath": {
+														"value": "@concat(pipeline().parameters.FolderPath,'/raw/new')",
+														"type": "Expression"
+													},
+													"FileName": "@item().name"
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "ds_ADLS_BinaryPathFilename",
+												"type": "DatasetReference",
+												"parameters": {
+													"FolderPath": {
+														"value": "@concat(pipeline().parameters.FolderPath,'/raw/processed')",
+														"type": "Expression"
+													},
+													"FileName": "@item().name"
+												}
+											}
+										]
+									}
+								]
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"FolderPath": {
+				"type": "string"
+			},
+			"FolderData": {
+				"type": "string"
+			},
+			"FileArray": {
+				"type": "array"
+			}
+		},
+		"variables": {
+			"FileFound": {
+				"type": "Boolean"
+			}
+		},
+		"folder": {
+			"name": "pl_LzToBronze"
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-10-03T12:08:31Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
