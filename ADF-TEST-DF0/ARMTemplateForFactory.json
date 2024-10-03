@@ -1,0 +1,2510 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "ADF-TEST-DF0"
+		},
+		"az_ADLS_adftestsa0_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'az_ADLS_adftestsa0'"
+		},
+		"az_ADLS_adftestsa0_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://adftestsa0.dfs.core.windows.net/"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/pipeline1')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "GetDayFolders",
+						"description": "Get the subfolders of Medallion main folder",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "ds_ADLS_Medallion",
+								"type": "DatasetReference",
+								"parameters": {
+									"Stage": "bronze/transaction_data/parquet/new/YearColumn=2024/MonthColumn=5"
+								}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "BinaryReadSettings"
+							}
+						}
+					},
+					{
+						"name": "ForEachDayFolder",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "GetDayFolders",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('GetDayFolders').output.childItems",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "CheckForParquet",
+									"type": "IfCondition",
+									"dependsOn": [
+										{
+											"activity": "GetFiles",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"expression": {
+											"value": "@greater(length(activity('GetFiles').output.childItems), 1)\n",
+											"type": "Expression"
+										},
+										"ifFalseActivities": [
+											{
+												"name": "FileDoesNotExist",
+												"type": "Wait",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"waitTimeInSeconds": 1
+												}
+											}
+										],
+										"ifTrueActivities": [
+											{
+												"name": "FileExist",
+												"type": "Wait",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"waitTimeInSeconds": 1
+												}
+											},
+											{
+												"name": "Data flow1",
+												"type": "ExecuteDataFlow",
+												"dependsOn": [
+													{
+														"activity": "FileExist",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"dataflow": {
+														"referenceName": "dataflow1",
+														"type": "DataFlowReference",
+														"parameters": {},
+														"datasetParameters": {
+															"InputSource": {
+																"FolderPath": "@concat('bronze/transaction_data/parquet/new/YearColumn=2024/MonthColumn=5/',item().name)"
+															},
+															"OutputSource": {
+																"FolderPath": {
+																	"value": "@concat('silver/transaction_data/parquet/new/YearColumn=2024/MonthColumn=5/',item().name)",
+																	"type": "Expression"
+																}
+															}
+														},
+														"linkedServiceParameters": {
+															"InputSource": {
+																"schemaLinkedService": {
+																	"FolderPath": {
+																		"value": "@concat('silver/transaction_data/parquet/new/YearColumn=2024/MonthColumn=5/',item().name)",
+																		"type": "Expression"
+																	}
+																}
+															}
+														}
+													},
+													"staging": {},
+													"compute": {
+														"coreCount": 16,
+														"computeType": "General"
+													},
+													"traceLevel": "Fine"
+												}
+											}
+										]
+									}
+								},
+								{
+									"name": "GetFiles",
+									"description": "Get the subfolders of Medallion main folder",
+									"type": "GetMetadata",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataset": {
+											"referenceName": "ds_ADLS_Medallion",
+											"type": "DatasetReference",
+											"parameters": {
+												"Stage": {
+													"value": "@concat('bronze/transaction_data/parquet/new/YearColumn=2024/MonthColumn=5/',item().name)",
+													"type": "Expression"
+												}
+											}
+										},
+										"fieldList": [
+											"childItems"
+										],
+										"storeSettings": {
+											"type": "AzureBlobFSReadSettings",
+											"recursive": true,
+											"enablePartitionDiscovery": false
+										},
+										"formatSettings": {
+											"type": "BinaryReadSettings"
+										}
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"variables": {
+					"MonthFolders": {
+						"type": "Array"
+					},
+					"DayFolders": {
+						"type": "Array"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-10-03T16:03:43Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_ADLS_Medallion')]",
+				"[concat(variables('factoryId'), '/dataflows/dataflow1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_CSVToParquet')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "LoopCSVFiles",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "GetCSVFiles",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "GetStructureREF",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('GetCSVFiles').output.childItems",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "CheckForStructureCSV",
+									"type": "IfCondition",
+									"dependsOn": [
+										{
+											"activity": "GetStructureCSV",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"expression": {
+											"value": "@equals(activity('GetStructureCSV').output.structure,activity('GetStructureREF').output.structure)",
+											"type": "Expression"
+										},
+										"ifFalseActivities": [
+											{
+												"name": "StructureFail",
+												"type": "Wait",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"waitTimeInSeconds": 1
+												}
+											}
+										],
+										"ifTrueActivities": [
+											{
+												"name": "df_FileProcessingCSVToParquet",
+												"type": "ExecuteDataFlow",
+												"dependsOn": [
+													{
+														"activity": "StructurePass",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"dataflow": {
+														"referenceName": "df_Transactions_CSVToParquet",
+														"type": "DataFlowReference",
+														"parameters": {},
+														"datasetParameters": {
+															"SchemaValidationCSV": {
+																"FolderName": "@pipeline().parameters.FolderInput",
+																"FileName": "@item().name",
+																"Source": "medallion"
+															},
+															"OutputToParquet": {
+																"FolderName": {
+																	"value": "@pipeline().parameters.FolderOutput",
+																	"type": "Expression"
+																},
+																"Main": "medallion"
+															}
+														}
+													},
+													"staging": {},
+													"integrationRuntime": {
+														"referenceName": "NewIntegrationRuntime",
+														"type": "IntegrationRuntimeReference"
+													},
+													"traceLevel": "Fine",
+													"runConcurrently": true,
+													"continueOnError": true
+												}
+											},
+											{
+												"name": "StructurePass",
+												"type": "Wait",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"waitTimeInSeconds": 1
+												}
+											},
+											{
+												"name": "Clear-LZ-INPUT-NEW",
+												"type": "Delete",
+												"state": "Inactive",
+												"onInactiveMarkAs": "Succeeded",
+												"dependsOn": [
+													{
+														"activity": "df_FileProcessingCSVToParquet",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"dataset": {
+														"referenceName": "AAA_ResetLandingZone",
+														"type": "DatasetReference",
+														"parameters": {
+															"FilePath": {
+																"value": "@concat(pipeline().parameters.FolderData,'/landing_zone/input/new')",
+																"type": "Expression"
+															},
+															"FileName": {
+																"value": "@item().name",
+																"type": "Expression"
+															}
+														}
+													},
+													"enableLogging": false,
+													"storeSettings": {
+														"type": "AzureBlobFSReadSettings",
+														"recursive": true,
+														"enablePartitionDiscovery": false
+													}
+												}
+											}
+										]
+									}
+								},
+								{
+									"name": "GetStructureCSV",
+									"type": "GetMetadata",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataset": {
+											"referenceName": "ds_ADLS_ValidationCSV",
+											"type": "DatasetReference",
+											"parameters": {
+												"FolderName": "@pipeline().parameters.FolderInput",
+												"FileName": "@item().name",
+												"Source": "medallion"
+											}
+										},
+										"fieldList": [
+											"structure"
+										],
+										"storeSettings": {
+											"type": "AzureBlobFSReadSettings",
+											"recursive": true,
+											"enablePartitionDiscovery": false
+										},
+										"formatSettings": {
+											"type": "DelimitedTextReadSettings"
+										}
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "GetCSVFiles",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "ds_ADLS_UnzipSource",
+								"type": "DatasetReference",
+								"parameters": {
+									"FolderPath": {
+										"value": "@concat(pipeline().parameters.FolderInput)",
+										"type": "Expression"
+									},
+									"FileName": "*"
+								}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "DelimitedTextReadSettings"
+							}
+						}
+					},
+					{
+						"name": "GetStructureREF",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "ds_ADLS_ValidationCSV",
+								"type": "DatasetReference",
+								"parameters": {
+									"FolderName": "@concat('config/',pipeline().parameters.FolderData)",
+									"FileName": "refschema.csv",
+									"Source": "medallion"
+								}
+							},
+							"fieldList": [
+								"structure"
+							],
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "DelimitedTextReadSettings"
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"FolderInput": {
+						"type": "string",
+						"defaultValue": "transaction_data/landing_zone/input/new"
+					},
+					"FolderOutput": {
+						"type": "string",
+						"defaultValue": "medallion/transaction_data/bronze/parquet"
+					},
+					"FolderData": {
+						"type": "string",
+						"defaultValue": "transaction_data"
+					}
+				},
+				"folder": {
+					"name": "pl_LzToBronze"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-10-03T12:08:31Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_ADLS_UnzipSource')]",
+				"[concat(variables('factoryId'), '/datasets/ds_ADLS_ValidationCSV')]",
+				"[concat(variables('factoryId'), '/dataflows/df_Transactions_CSVToParquet')]",
+				"[concat(variables('factoryId'), '/integrationRuntimes/NewIntegrationRuntime')]",
+				"[concat(variables('factoryId'), '/datasets/AAA_ResetLandingZone')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_Main_LandingZoneToBronze')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "- Check folders for new files\n- Extract ZIP files to CSV\n- Validate Structure/Schema\n- Convert to parquet files",
+				"activities": [
+					{
+						"name": "GetDataFolders",
+						"description": "Get the subfolders of Medallion main folder",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "ds_ADLS_Medallion",
+								"type": "DatasetReference",
+								"parameters": {
+									"Stage": "landing_zone"
+								}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "BinaryReadSettings"
+							}
+						}
+					},
+					{
+						"name": "LoopDataFolders",
+						"description": "For each \"_data\" folder in Medallion",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "GetDataFolders",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('GetDataFolders').output.childItems",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "GetFilesRawNew",
+									"description": "Check for file in each folder in medallion, if we have file, in location: landing_zone/raw/new",
+									"type": "GetMetadata",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataset": {
+											"referenceName": "ds_ADLS_BinaryPathFilename",
+											"type": "DatasetReference",
+											"parameters": {
+												"FolderPath": {
+													"value": "@concat('landing_zone/', item().name, '/raw/new')",
+													"type": "Expression"
+												},
+												"FileName": "*"
+											}
+										},
+										"fieldList": [
+											"childItems"
+										],
+										"storeSettings": {
+											"type": "AzureBlobFSReadSettings",
+											"recursive": true,
+											"enablePartitionDiscovery": false
+										},
+										"formatSettings": {
+											"type": "BinaryReadSettings"
+										}
+									}
+								},
+								{
+									"name": "CheckForFilesZip",
+									"type": "IfCondition",
+									"state": "Inactive",
+									"onInactiveMarkAs": "Succeeded",
+									"dependsOn": [
+										{
+											"activity": "GetFilesRawNew",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"expression": {
+											"value": "@and(\n    greater(length(activity('GetFilesRawNew').output.childItems), 0),\n    contains(join(activity('GetFilesRawNew').output.childItems, ','), '.zip')\n)\n",
+											"type": "Expression"
+										},
+										"ifFalseActivities": [
+											{
+												"name": "NotFileFound",
+												"type": "SetVariable",
+												"dependsOn": [],
+												"policy": {
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"variableName": "FileFound",
+													"value": false
+												}
+											}
+										],
+										"ifTrueActivities": [
+											{
+												"name": "pl_UnzipFilesNew",
+												"description": "Unzip the files in current folder",
+												"type": "ExecutePipeline",
+												"dependsOn": [
+													{
+														"activity": "FileFound",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"pipeline": {
+														"referenceName": "pl_UnzipFilesRaw",
+														"type": "PipelineReference"
+													},
+													"waitOnCompletion": true,
+													"parameters": {
+														"FolderPath": {
+															"value": "@concat('landing_zone/', item().name)",
+															"type": "Expression"
+														},
+														"FolderData": {
+															"value": "@item().name",
+															"type": "Expression"
+														},
+														"FileArray": {
+															"value": "@activity('GetFilesRawNew').output.childItems",
+															"type": "Expression"
+														}
+													}
+												}
+											},
+											{
+												"name": "FileFound",
+												"type": "SetVariable",
+												"dependsOn": [],
+												"policy": {
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"variableName": "FileFound",
+													"value": true
+												}
+											}
+										]
+									}
+								},
+								{
+									"name": "CheckForCSVFIles",
+									"type": "IfCondition",
+									"dependsOn": [
+										{
+											"activity": "GetFilesInputNew",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"expression": {
+											"value": "@greater(length(activity('GetFilesInputNew').output.childItems), 0)",
+											"type": "Expression"
+										},
+										"ifFalseActivities": [
+											{
+												"name": "CSVNotFound",
+												"type": "Wait",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"waitTimeInSeconds": 1
+												}
+											}
+										],
+										"ifTrueActivities": [
+											{
+												"name": "pl_CSVToParquet",
+												"description": "Process the CSV file and output the Parquet file.",
+												"type": "ExecutePipeline",
+												"dependsOn": [
+													{
+														"activity": "CSVFound",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"pipeline": {
+														"referenceName": "pl_CSVToParquet",
+														"type": "PipelineReference"
+													},
+													"waitOnCompletion": true,
+													"parameters": {
+														"FolderInput": {
+															"value": "@concat('landing_zone/',item().name,'/input/new')",
+															"type": "Expression"
+														},
+														"FolderOutput": {
+															"value": "@concat('bronze/',item().name,'/parquet/new')",
+															"type": "Expression"
+														},
+														"FolderData": {
+															"value": "@item().name",
+															"type": "Expression"
+														}
+													}
+												}
+											},
+											{
+												"name": "CSVFound",
+												"type": "Wait",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"waitTimeInSeconds": 1
+												}
+											}
+										]
+									}
+								},
+								{
+									"name": "GetFilesInputNew",
+									"type": "GetMetadata",
+									"dependsOn": [
+										{
+											"activity": "CheckForFilesZip",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataset": {
+											"referenceName": "ds_ADLS_BinaryPathFilename",
+											"type": "DatasetReference",
+											"parameters": {
+												"FolderPath": {
+													"value": "@concat('landing_zone/', item().name, '/input/new')",
+													"type": "Expression"
+												},
+												"FileName": "*"
+											}
+										},
+										"fieldList": [
+											"childItems"
+										],
+										"storeSettings": {
+											"type": "AzureBlobFSReadSettings",
+											"recursive": true,
+											"enablePartitionDiscovery": false
+										},
+										"formatSettings": {
+											"type": "BinaryReadSettings"
+										}
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"variables": {
+					"FileFound": {
+						"type": "Boolean"
+					}
+				},
+				"folder": {
+					"name": "pl_LzToBronze"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-10-03T16:32:48Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_ADLS_Medallion')]",
+				"[concat(variables('factoryId'), '/datasets/ds_ADLS_BinaryPathFilename')]",
+				"[concat(variables('factoryId'), '/pipelines/pl_UnzipFilesRaw')]",
+				"[concat(variables('factoryId'), '/pipelines/pl_CSVToParquet')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_ResetLandingZone')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "ForEach_LZ_input_new",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "LZ_input_new",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('LZ_input_new').output.childItems",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "Clear-LZ-INPUT-NEW",
+									"type": "Delete",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataset": {
+											"referenceName": "AAA_ResetLandingZone",
+											"type": "DatasetReference",
+											"parameters": {
+												"FilePath": "landing_zone/transaction_data/input/new",
+												"FileName": {
+													"value": "@item().name",
+													"type": "Expression"
+												}
+											}
+										},
+										"enableLogging": false,
+										"storeSettings": {
+											"type": "AzureBlobFSReadSettings",
+											"recursive": true,
+											"enablePartitionDiscovery": false
+										}
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "LZ_input_new",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "AAA_ResetLandingZone",
+								"type": "DatasetReference",
+								"parameters": {
+									"FilePath": "landing_zone/transaction_data/input/new",
+									"FileName": "*"
+								}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "BinaryReadSettings"
+							}
+						}
+					},
+					{
+						"name": "BR_PARQUET",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "AAA_ResetLandingZone",
+								"type": "DatasetReference",
+								"parameters": {
+									"FilePath": "bronze/transaction_data/parquet",
+									"FileName": "*"
+								}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "BinaryReadSettings"
+							}
+						}
+					},
+					{
+						"name": "LZ_RAW_PROC",
+						"type": "GetMetadata",
+						"dependsOn": [
+							{
+								"activity": "ForEach_LZ_input_new_copy2",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "AAA_ResetLandingZone",
+								"type": "DatasetReference",
+								"parameters": {
+									"FilePath": "landing_zone/transaction_data/raw/processed",
+									"FileName": "*"
+								}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "BinaryReadSettings"
+							}
+						}
+					},
+					{
+						"name": "TRANSFER_RAW_NEW",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "LZ_RAW_PROC",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('LZ_RAW_PROC').output.childItems",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "LZ-RAW-PROCESSSEDTORAW_copy1",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "BinarySource",
+											"storeSettings": {
+												"type": "AzureBlobFSReadSettings",
+												"recursive": true,
+												"deleteFilesAfterCompletion": true
+											},
+											"formatSettings": {
+												"type": "BinaryReadSettings"
+											}
+										},
+										"sink": {
+											"type": "BinarySink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings",
+												"copyBehavior": "PreserveHierarchy"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "AAA_ResetLandingZone",
+											"type": "DatasetReference",
+											"parameters": {
+												"FilePath": "landing_zone/transaction_data/raw/processed",
+												"FileName": {
+													"value": "@item().name",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "AAA_ResetLandingZone",
+											"type": "DatasetReference",
+											"parameters": {
+												"FilePath": "landing_zone/transaction_data/raw/new",
+												"FileName": "@item().name"
+											}
+										}
+									]
+								}
+							]
+						}
+					},
+					{
+						"name": "ForEach_LZ_input_new_copy1",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "BR_PARQUET",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('BR_PARQUET').output.childItems",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "Clear-LZ-INPUT-NEW_copy1",
+									"type": "Delete",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataset": {
+											"referenceName": "AAA_ResetLandingZone",
+											"type": "DatasetReference",
+											"parameters": {
+												"FilePath": "bronze/transaction_data/parquet",
+												"FileName": {
+													"value": "@item().name",
+													"type": "Expression"
+												}
+											}
+										},
+										"enableLogging": false,
+										"storeSettings": {
+											"type": "AzureBlobFSReadSettings",
+											"recursive": true,
+											"enablePartitionDiscovery": false
+										}
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "ForEach_LZ_input_new_copy2",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "LZ_RAW_NEW",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('LZ_RAW_NEW').output.childItems",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "Clear-LZ-INPUT-NEW_copy2",
+									"type": "Delete",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataset": {
+											"referenceName": "AAA_ResetLandingZone",
+											"type": "DatasetReference",
+											"parameters": {
+												"FilePath": "landing_zone/transaction_data/raw/new",
+												"FileName": {
+													"value": "@item().name",
+													"type": "Expression"
+												}
+											}
+										},
+										"enableLogging": false,
+										"storeSettings": {
+											"type": "AzureBlobFSReadSettings",
+											"recursive": true,
+											"enablePartitionDiscovery": false
+										}
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "LZ_RAW_NEW",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "AAA_ResetLandingZone",
+								"type": "DatasetReference",
+								"parameters": {
+									"FilePath": "landing_zone/transaction_data/raw/new",
+									"FileName": "*"
+								}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "BinaryReadSettings"
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "reset"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-10-03T10:55:21Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/AAA_ResetLandingZone')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_UnzipFilesRaw')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "ForEachFileInRawNew",
+						"description": "Loop through all the files in Raw/New",
+						"type": "ForEach",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@pipeline().parameters.FileArray",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "CheckFileIsZip",
+									"description": "Check if the current file is ZIP",
+									"type": "IfCondition",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"expression": {
+											"value": "@endswith(item().name, '.zip')",
+											"type": "Expression"
+										},
+										"ifFalseActivities": [
+											{
+												"name": "Ext_Val_Error",
+												"type": "Wait",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"waitTimeInSeconds": 1
+												}
+											},
+											{
+												"name": "MoveFileToError",
+												"type": "Copy",
+												"dependsOn": [
+													{
+														"activity": "Ext_Val_Error",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "BinarySource",
+														"storeSettings": {
+															"type": "AzureBlobFSReadSettings",
+															"recursive": false,
+															"deleteFilesAfterCompletion": true
+														},
+														"formatSettings": {
+															"type": "BinaryReadSettings"
+														}
+													},
+													"sink": {
+														"type": "BinarySink",
+														"storeSettings": {
+															"type": "AzureBlobFSWriteSettings",
+															"copyBehavior": "PreserveHierarchy"
+														}
+													},
+													"enableStaging": false
+												},
+												"inputs": [
+													{
+														"referenceName": "ds_ADLS_BinaryPathFilename",
+														"type": "DatasetReference",
+														"parameters": {
+															"FolderPath": {
+																"value": "@concat(pipeline().parameters.FolderPath,'/raw/new')",
+																"type": "Expression"
+															},
+															"FileName": "@item().name"
+														}
+													}
+												],
+												"outputs": [
+													{
+														"referenceName": "ds_ADLS_BinaryPathFilename",
+														"type": "DatasetReference",
+														"parameters": {
+															"FolderPath": {
+																"value": "@concat(pipeline().parameters.FolderPath,'/raw/errors')",
+																"type": "Expression"
+															},
+															"FileName": "@item().name"
+														}
+													}
+												]
+											}
+										],
+										"ifTrueActivities": [
+											{
+												"name": "Ext_Val_Good",
+												"type": "Wait",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"waitTimeInSeconds": 1
+												}
+											},
+											{
+												"name": "UnzipCurrentFile",
+												"description": "Execute the unzip of the current file into \"current_data_folder/landing_zone/input/new\"",
+												"type": "Copy",
+												"dependsOn": [
+													{
+														"activity": "Ext_Val_Good",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "DelimitedTextSource",
+														"storeSettings": {
+															"type": "AzureBlobFSReadSettings",
+															"recursive": true,
+															"enablePartitionDiscovery": false
+														},
+														"formatSettings": {
+															"type": "DelimitedTextReadSettings",
+															"compressionProperties": {
+																"type": "ZipDeflateReadSettings"
+															}
+														}
+													},
+													"sink": {
+														"type": "DelimitedTextSink",
+														"storeSettings": {
+															"type": "AzureBlobFSWriteSettings",
+															"copyBehavior": "FlattenHierarchy"
+														},
+														"formatSettings": {
+															"type": "DelimitedTextWriteSettings",
+															"quoteAllText": true,
+															"fileExtension": ".txt"
+														}
+													},
+													"enableStaging": false,
+													"translator": {
+														"type": "TabularTranslator",
+														"typeConversion": true,
+														"typeConversionSettings": {
+															"allowDataTruncation": true,
+															"treatBooleanAsNumber": false
+														}
+													}
+												},
+												"inputs": [
+													{
+														"referenceName": "ds_ADLS_UnzipSource",
+														"type": "DatasetReference",
+														"parameters": {
+															"FolderPath": {
+																"value": "@concat(pipeline().parameters.FolderPath,'/raw/new')",
+																"type": "Expression"
+															},
+															"FileName": "@item().name"
+														}
+													}
+												],
+												"outputs": [
+													{
+														"referenceName": "ds_ADLS_UnzipDestination",
+														"type": "DatasetReference",
+														"parameters": {
+															"FolderPath": {
+																"value": "@concat(pipeline().parameters.FolderPath,'/input/new')",
+																"type": "Expression"
+															}
+														}
+													}
+												]
+											},
+											{
+												"name": "MoveFileToSuccess",
+												"type": "Copy",
+												"dependsOn": [
+													{
+														"activity": "UnzipCurrentFile",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "BinarySource",
+														"storeSettings": {
+															"type": "AzureBlobFSReadSettings",
+															"recursive": false,
+															"deleteFilesAfterCompletion": true
+														},
+														"formatSettings": {
+															"type": "BinaryReadSettings"
+														}
+													},
+													"sink": {
+														"type": "BinarySink",
+														"storeSettings": {
+															"type": "AzureBlobFSWriteSettings",
+															"copyBehavior": "PreserveHierarchy"
+														}
+													},
+													"enableStaging": false
+												},
+												"inputs": [
+													{
+														"referenceName": "ds_ADLS_BinaryPathFilename",
+														"type": "DatasetReference",
+														"parameters": {
+															"FolderPath": {
+																"value": "@concat(pipeline().parameters.FolderPath,'/raw/new')",
+																"type": "Expression"
+															},
+															"FileName": "@item().name"
+														}
+													}
+												],
+												"outputs": [
+													{
+														"referenceName": "ds_ADLS_BinaryPathFilename",
+														"type": "DatasetReference",
+														"parameters": {
+															"FolderPath": {
+																"value": "@concat(pipeline().parameters.FolderPath,'/raw/processed')",
+																"type": "Expression"
+															},
+															"FileName": "@item().name"
+														}
+													}
+												]
+											}
+										]
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"FolderPath": {
+						"type": "string"
+					},
+					"FolderData": {
+						"type": "string"
+					},
+					"FileArray": {
+						"type": "array"
+					}
+				},
+				"variables": {
+					"FileFound": {
+						"type": "Boolean"
+					}
+				},
+				"folder": {
+					"name": "pl_LzToBronze"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-10-03T12:08:31Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_ADLS_BinaryPathFilename')]",
+				"[concat(variables('factoryId'), '/datasets/ds_ADLS_UnzipSource')]",
+				"[concat(variables('factoryId'), '/datasets/ds_ADLS_UnzipDestination')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AAA_ResetLandingZone')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "az_ADLS_adftestsa0",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"FilePath": {
+						"type": "string"
+					},
+					"FileName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().FileName",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@dataset().FilePath",
+							"type": "Expression"
+						},
+						"fileSystem": "medallion"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/az_ADLS_adftestsa0')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_ADLS_BinaryPathFilename')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "az_ADLS_adftestsa0",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"FolderPath": {
+						"type": "string"
+					},
+					"FileName": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "ds_LzToBronze"
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().FileName",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@dataset().FolderPath",
+							"type": "Expression"
+						},
+						"fileSystem": "medallion"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/az_ADLS_adftestsa0')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_ADLS_Medallion')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "az_ADLS_adftestsa0",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"Stage": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "ds_LzToBronze"
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": {
+							"value": "@dataset().Stage",
+							"type": "Expression"
+						},
+						"fileSystem": "medallion"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/az_ADLS_adftestsa0')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_ADLS_ParquetBronze')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "az_ADLS_adftestsa0",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"FolderName": {
+						"type": "string"
+					},
+					"Main": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "ds_LzToBronze"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": {
+							"value": "@dataset().FolderName",
+							"type": "Expression"
+						},
+						"fileSystem": {
+							"value": "@dataset().Main",
+							"type": "Expression"
+						}
+					},
+					"compressionCodec": "none"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/az_ADLS_adftestsa0')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_ADLS_ReadParquetFolder')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "az_ADLS_adftestsa0",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"FolderPath": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "ds_BronzeToSilver"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": {
+							"value": "@dataset().FolderPath",
+							"type": "Expression"
+						},
+						"fileSystem": "medallion"
+					},
+					"compressionCodec": "none"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/az_ADLS_adftestsa0')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_ADLS_UnzipDestination')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "az_ADLS_adftestsa0",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"FolderPath": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "ds_LzToBronze"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": {
+							"value": "@dataset().FolderPath",
+							"type": "Expression"
+						},
+						"fileSystem": "medallion"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/az_ADLS_adftestsa0')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_ADLS_UnzipSource')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "az_ADLS_adftestsa0",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"FolderPath": {
+						"type": "string"
+					},
+					"FileName": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "ds_LzToBronze"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().FileName",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@dataset().FolderPath",
+							"type": "Expression"
+						},
+						"fileSystem": "medallion"
+					},
+					"columnDelimiter": ",",
+					"compressionCodec": "ZipDeflate",
+					"compressionLevel": "Optimal",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/az_ADLS_adftestsa0')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_ADLS_ValidationCSV')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "az_ADLS_adftestsa0",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"FolderName": {
+						"type": "string"
+					},
+					"FileName": {
+						"type": "string"
+					},
+					"Source": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "ds_LzToBronze"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().FileName",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@dataset().FolderName",
+							"type": "Expression"
+						},
+						"fileSystem": {
+							"value": "@dataset().Source",
+							"type": "Expression"
+						}
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "Location ID",
+						"type": "String"
+					},
+					{
+						"name": "Location Name",
+						"type": "String"
+					},
+					{
+						"name": "Location ExternalId",
+						"type": "String"
+					},
+					{
+						"name": "storeType",
+						"type": "String"
+					},
+					{
+						"name": "Client ID",
+						"type": "String"
+					},
+					{
+						"name": "Created At",
+						"type": "String"
+					},
+					{
+						"name": "Action Type",
+						"type": "String"
+					},
+					{
+						"name": "Transaction ID",
+						"type": "String"
+					},
+					{
+						"name": "Payment Mode",
+						"type": "String"
+					},
+					{
+						"name": "Total Time",
+						"type": "String"
+					},
+					{
+						"name": "Quantity",
+						"type": "String"
+					},
+					{
+						"name": "Brand ID",
+						"type": "String"
+					},
+					{
+						"name": "Brand Name",
+						"type": "String"
+					},
+					{
+						"name": "Price",
+						"type": "String"
+					},
+					{
+						"name": "Discount",
+						"type": "String"
+					},
+					{
+						"name": "Price With Discount",
+						"type": "String"
+					},
+					{
+						"name": "Price With Out Discount",
+						"type": "String"
+					},
+					{
+						"name": "SKU ID",
+						"type": "String"
+					},
+					{
+						"name": "SKU Name",
+						"type": "String"
+					},
+					{
+						"name": "Offer ID",
+						"type": "String"
+					},
+					{
+						"name": "Offer Name",
+						"type": "String"
+					},
+					{
+						"name": "Offer Category ID",
+						"type": "String"
+					},
+					{
+						"name": "Offer Category Name",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/az_ADLS_adftestsa0')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_STATIC')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "az_ADLS_adftestsa0",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "ds_BronzeToSilver"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "bronze/transaction_data/parquet/new/YearColumn=2024/MonthColumn=5/DayColumn=16",
+						"fileSystem": "medallion"
+					},
+					"compressionCodec": "none"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/az_ADLS_adftestsa0')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/az_ADLS_adftestsa0')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('az_ADLS_adftestsa0_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('az_ADLS_adftestsa0_accountKey')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "NewIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/NewIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NewIntegrationRuntime')]",
+			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "West Europe",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 16,
+							"timeToLive": 10,
+							"cleanup": false,
+							"customProperties": []
+						}
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dataflow1')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ds_ADLS_ReadParquetFolder",
+								"type": "DatasetReference"
+							},
+							"name": "InputSource"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ds_ADLS_ReadParquetFolder",
+								"type": "DatasetReference"
+							},
+							"name": "OutputSource"
+						}
+					],
+					"transformations": [
+						{
+							"name": "RemoveNullValues"
+						},
+						{
+							"name": "CalculateMean"
+						},
+						{
+							"name": "CombineData"
+						},
+						{
+							"name": "SelectAllData"
+						},
+						{
+							"name": "ReplaceZeroData"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          LocationId as string,",
+						"          LocationName as string,",
+						"          LocationExternalId as integer,",
+						"          StoreType as string,",
+						"          ClientId as string,",
+						"          CreatedAt as timestamp,",
+						"          ActionType as string,",
+						"          TransactionId as long,",
+						"          PaymentMode as string,",
+						"          TotalTime as integer,",
+						"          Quantity as float,",
+						"          BrandId as string,",
+						"          BrandName as string,",
+						"          Price as float,",
+						"          Discount as float,",
+						"          SalesValue as float,",
+						"          RetailValue as float,",
+						"          SkuId as string,",
+						"          SkuName as string,",
+						"          OfferId as string,",
+						"          OfferName as string,",
+						"          OfferCategory as string,",
+						"          OfferCategoryName as string,",
+						"          HopTimestamp as timestamp",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false,",
+						"     format: 'parquet') ~> InputSource",
+						"InputSource filter(!isNull(TransactionId) && !isNull(LocationName) && !isNull(SkuName) && !isNull(OfferName) && !isNull(OfferCategoryName) && !isNull(BrandName) && !isNull(Price)) ~> RemoveNullValues",
+						"RemoveNullValues aggregate(groupBy(SkuName),",
+						"     MeanQuantity = toFloat(avg(Quantity)),",
+						"          MeanSalesValue = toFloat(avg(SalesValue))) ~> CalculateMean",
+						"SelectAllData, CalculateMean join(SelectAllData@SkuName == CalculateMean@SkuName,",
+						"     joinType:'left',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> CombineData",
+						"RemoveNullValues select(mapColumn(",
+						"          LocationId,",
+						"          LocationName,",
+						"          LocationExternalId,",
+						"          StoreType,",
+						"          ClientId,",
+						"          CreatedAt,",
+						"          ActionType,",
+						"          TransactionId,",
+						"          PaymentMode,",
+						"          TotalTime,",
+						"          Quantity,",
+						"          BrandId,",
+						"          BrandName,",
+						"          Price,",
+						"          Discount,",
+						"          SalesValue,",
+						"          RetailValue,",
+						"          SkuId,",
+						"          SkuName,",
+						"          OfferId,",
+						"          OfferName,",
+						"          OfferCategory,",
+						"          OfferCategoryName,",
+						"          HopTimestamp",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> SelectAllData",
+						"CombineData derive(Quantity = iif(Quantity == 0, MeanQuantity, Quantity),",
+						"          SalesValue = iif(SalesValue== 0, MeanSalesValue, SalesValue)) ~> ReplaceZeroData",
+						"ReplaceZeroData sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     format: 'parquet',",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> OutputSource"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_ADLS_ReadParquetFolder')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/df_Transactions_CSVToParquet')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ds_ADLS_ValidationCSV",
+								"type": "DatasetReference"
+							},
+							"name": "SchemaValidationCSV",
+							"description": "Import data from ds_ADLS_ValidationCSV and validate the column"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ds_ADLS_ParquetBronze",
+								"type": "DatasetReference"
+							},
+							"name": "OutputToParquet"
+						}
+					],
+					"transformations": [
+						{
+							"name": "SchmeaModification",
+							"description": "Change the data type for each input column accordingly"
+						},
+						{
+							"name": "AddTimestampColumn"
+						},
+						{
+							"name": "RemoveNullPrice"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          {Location ID} as string,",
+						"          {Location Name} as string,",
+						"          {Location ExternalId} as string,",
+						"          storeType as string,",
+						"          {Client ID} as string,",
+						"          {Created At} as string,",
+						"          {Action Type} as string,",
+						"          {Transaction ID} as string,",
+						"          {Payment Mode} as string,",
+						"          {Total Time} as string,",
+						"          Quantity as string,",
+						"          {Brand ID} as string,",
+						"          {Brand Name} as string,",
+						"          Price as string,",
+						"          Discount as string,",
+						"          {Price With Discount} as string,",
+						"          {Price With Out Discount} as string,",
+						"          {SKU ID} as string,",
+						"          {SKU Name} as string,",
+						"          {Offer ID} as string,",
+						"          {Offer Name} as string,",
+						"          {Offer Category ID} as string,",
+						"          {Offer Category Name} as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false,",
+						"     maxColumns: 200001) ~> SchemaValidationCSV",
+						"SchemaValidationCSV cast(output(",
+						"          {Location ID} as string,",
+						"          {Location Name} as string,",
+						"          {Location ExternalId} as integer,",
+						"          storeType as string,",
+						"          {Client ID} as string,",
+						"          {Created At} as timestamp,",
+						"          {Action Type} as string,",
+						"          {Transaction ID} as long,",
+						"          {Payment Mode} as string,",
+						"          {Total Time} as integer,",
+						"          Quantity as float,",
+						"          {Brand ID} as string,",
+						"          {Brand Name} as string,",
+						"          Price as float,",
+						"          Discount as float,",
+						"          {Price With Discount} as float,",
+						"          {Price With Out Discount} as float,",
+						"          {SKU ID} as string,",
+						"          {SKU Name} as string,",
+						"          {Offer ID} as string,",
+						"          {Offer Name} as string,",
+						"          {Offer Category ID} as string,",
+						"          {Offer Category Name} as string",
+						"     ),",
+						"     errors: true) ~> SchmeaModification",
+						"RemoveNullPrice derive(HopTimestamp = currentTimestamp(),",
+						"          YearColumn = toString(year({Created At})),",
+						"          MonthColumn = toString(month({Created At})),",
+						"          DayColumn = toString(dayOfMonth({Created At}))) ~> AddTimestampColumn",
+						"SchmeaModification filter(!isNull(Price)) ~> RemoveNullPrice",
+						"AddTimestampColumn sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     format: 'parquet',",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     mapColumn(",
+						"          LocationId = {Location ID},",
+						"          LocationName = {Location Name},",
+						"          LocationExternalId = {Location ExternalId},",
+						"          StoreType = storeType,",
+						"          ClientId = {Client ID},",
+						"          CreatedAt = {Created At},",
+						"          ActionType = {Action Type},",
+						"          TransactionId = {Transaction ID},",
+						"          PaymentMode = {Payment Mode},",
+						"          TotalTime = {Total Time},",
+						"          Quantity,",
+						"          BrandId = {Brand ID},",
+						"          BrandName = {Brand Name},",
+						"          Price,",
+						"          Discount,",
+						"          SalesValue = {Price With Discount},",
+						"          RetailValue = {Price With Out Discount},",
+						"          SkuId = {SKU ID},",
+						"          SkuName = {SKU Name},",
+						"          OfferId = {Offer ID},",
+						"          OfferName = {Offer Name},",
+						"          OfferCategory = {Offer Category ID},",
+						"          OfferCategoryName = {Offer Category Name},",
+						"          HopTimestamp,",
+						"          YearColumn,",
+						"          MonthColumn,",
+						"          DayColumn",
+						"     ),",
+						"     partitionBy('key',",
+						"          0,",
+						"          YearColumn,",
+						"          MonthColumn,",
+						"          DayColumn",
+						"     )) ~> OutputToParquet"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_ADLS_ValidationCSV')]",
+				"[concat(variables('factoryId'), '/datasets/ds_ADLS_ParquetBronze')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/df_Transactions_CSVToParquet_copy1')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"folder": {
+					"name": "BACKUP"
+				},
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ds_ADLS_ValidationCSV",
+								"type": "DatasetReference"
+							},
+							"name": "SchemaValidationCSV",
+							"description": "Import data from ds_ADLS_ValidationCSV and validate the column"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ds_ADLS_ParquetBronze",
+								"type": "DatasetReference"
+							},
+							"name": "OutputToParquet"
+						}
+					],
+					"transformations": [
+						{
+							"name": "SchmeaModification",
+							"description": "Change the data type for each input column accordingly"
+						},
+						{
+							"name": "AddTimestampColumn"
+						},
+						{
+							"name": "RemoveNullPrice"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          {Location ID} as string,",
+						"          {Location Name} as string,",
+						"          {Location ExternalId} as string,",
+						"          storeType as string,",
+						"          {Client ID} as string,",
+						"          {Created At} as string,",
+						"          {Action Type} as string,",
+						"          {Transaction ID} as string,",
+						"          {Payment Mode} as string,",
+						"          {Total Time} as string,",
+						"          Quantity as string,",
+						"          {Brand ID} as string,",
+						"          {Brand Name} as string,",
+						"          Price as string,",
+						"          Discount as string,",
+						"          {Price With Discount} as string,",
+						"          {Price With Out Discount} as string,",
+						"          {SKU ID} as string,",
+						"          {SKU Name} as string,",
+						"          {Offer ID} as string,",
+						"          {Offer Name} as string,",
+						"          {Offer Category ID} as string,",
+						"          {Offer Category Name} as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false,",
+						"     maxColumns: 200001) ~> SchemaValidationCSV",
+						"SchemaValidationCSV cast(output(",
+						"          {Location ID} as string,",
+						"          {Location Name} as string,",
+						"          {Location ExternalId} as integer,",
+						"          storeType as string,",
+						"          {Client ID} as string,",
+						"          {Created At} as timestamp,",
+						"          {Action Type} as string,",
+						"          {Transaction ID} as long,",
+						"          {Payment Mode} as string,",
+						"          {Total Time} as integer,",
+						"          Quantity as float,",
+						"          {Brand ID} as string,",
+						"          {Brand Name} as string,",
+						"          Price as float,",
+						"          Discount as float,",
+						"          {Price With Discount} as float,",
+						"          {Price With Out Discount} as float,",
+						"          {SKU ID} as string,",
+						"          {SKU Name} as string,",
+						"          {Offer ID} as string,",
+						"          {Offer Name} as string,",
+						"          {Offer Category ID} as string,",
+						"          {Offer Category Name} as string",
+						"     ),",
+						"     errors: true) ~> SchmeaModification",
+						"RemoveNullPrice derive(HopTimestamp = currentTimestamp(),",
+						"          YearColumn = toString(year({Created At})),",
+						"          MonthColumn = toString(month({Created At})),",
+						"          DayColumn = toString(dayOfMonth({Created At}))) ~> AddTimestampColumn",
+						"SchmeaModification filter(!isNull(Price)) ~> RemoveNullPrice",
+						"AddTimestampColumn sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     format: 'parquet',",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     mapColumn(",
+						"          LocationId = {Location ID},",
+						"          LocationName = {Location Name},",
+						"          LocationExternalId = {Location ExternalId},",
+						"          StoreType = storeType,",
+						"          ClientId = {Client ID},",
+						"          CreatedAt = {Created At},",
+						"          ActionType = {Action Type},",
+						"          TransactionId = {Transaction ID},",
+						"          PaymentMode = {Payment Mode},",
+						"          TotalTime = {Total Time},",
+						"          Quantity,",
+						"          BrandId = {Brand ID},",
+						"          BrandName = {Brand Name},",
+						"          Price,",
+						"          Discount,",
+						"          SalesValue = {Price With Discount},",
+						"          RetailValue = {Price With Out Discount},",
+						"          SkuId = {SKU ID},",
+						"          SkuName = {SKU Name},",
+						"          OfferId = {Offer ID},",
+						"          OfferName = {Offer Name},",
+						"          OfferCategory = {Offer Category ID},",
+						"          OfferCategoryName = {Offer Category Name},",
+						"          HopTimestamp,",
+						"          YearColumn,",
+						"          MonthColumn,",
+						"          DayColumn",
+						"     ),",
+						"     partitionBy('key',",
+						"          0,",
+						"          YearColumn,",
+						"          MonthColumn,",
+						"          DayColumn",
+						"     )) ~> OutputToParquet"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_ADLS_ValidationCSV')]",
+				"[concat(variables('factoryId'), '/datasets/ds_ADLS_ParquetBronze')]"
+			]
+		}
+	]
+}
