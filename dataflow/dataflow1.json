@@ -33,9 +33,6 @@
 				},
 				{
 					"name": "SelectAllData"
-				},
-				{
-					"name": "ReplaceZeroData"
 				}
 			],
 			"scriptLines": [
@@ -106,9 +103,7 @@
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> SelectAllData",
-				"CombineData derive(Quantity = iif(Quantity == 0, MeanQuantity, Quantity),",
-				"          SalesValue = iif(SalesValue== 0, MeanSalesValue, SalesValue)) ~> ReplaceZeroData",
-				"ReplaceZeroData sink(allowSchemaDrift: true,",
+				"CombineData sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'parquet',",
 				"     umask: 0022,",
