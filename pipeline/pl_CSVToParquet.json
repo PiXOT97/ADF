@@ -90,6 +90,9 @@
 															"type": "Expression"
 														},
 														"Main": "medallion"
+													},
+													"sink1": {
+														"PathOutput": "@pipeline().parameters.FolderOutput"
 													}
 												}
 											},
