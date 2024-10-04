@@ -52,6 +52,22 @@
 										"typeProperties": {
 											"waitTimeInSeconds": 1
 										}
+									},
+									{
+										"name": "StructureFail_copy1",
+										"type": "Wait",
+										"dependsOn": [
+											{
+												"activity": "StructureFail",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"userProperties": [],
+										"typeProperties": {
+											"waitTimeInSeconds": 1
+										}
 									}
 								],
 								"ifTrueActivities": [
