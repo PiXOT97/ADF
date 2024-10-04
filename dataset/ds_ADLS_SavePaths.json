@@ -18,7 +18,6 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobFSLocation",
-				"fileName": "paths_log.csv",
 				"folderPath": {
 					"value": "@dataset().PathOutput",
 					"type": "Expression"

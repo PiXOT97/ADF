@@ -91,8 +91,11 @@
 														},
 														"Main": "medallion"
 													},
-													"sink1": {
-														"PathOutput": "@pipeline().parameters.FolderOutput"
+													"PathOutput": {
+														"PathOutput": {
+															"value": "@concat(pipeline().parameters.FolderOutput,'/Paths')",
+															"type": "Expression"
+														}
 													}
 												}
 											},
