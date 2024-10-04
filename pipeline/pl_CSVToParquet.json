@@ -93,7 +93,7 @@
 													},
 													"PathOutput": {
 														"PathOutput": {
-															"value": "@concat(pipeline().parameters.FolderOutput,'/Paths')",
+															"value": "@concat(pipeline().parameters.FolderOutput,'/paths')",
 															"type": "Expression"
 														}
 													}
