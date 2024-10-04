@@ -92,7 +92,8 @@
 														"Main": "medallion"
 													},
 													"PathOutput": {
-														"PathOutput": "@pipeline().parameters.FolderOutput"
+														"FolderName": "@pipeline().parameters.FolderOutput",
+														"Main": "medallion"
 													}
 												}
 											},
