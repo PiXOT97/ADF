@@ -23,7 +23,7 @@
 				},
 				{
 					"dataset": {
-						"referenceName": "ds_ADLS_ParquetBronze",
+						"referenceName": "ds_ADLS_SavePaths",
 						"type": "DatasetReference"
 					},
 					"name": "PathOutput"
@@ -156,7 +156,6 @@
 				"     )) ~> OutputToParquet",
 				"UniquePaths sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
-				"     format: 'parquet',",
 				"     umask: 0022,",
 				"     preCommands: [],",
 				"     postCommands: []) ~> PathOutput"
