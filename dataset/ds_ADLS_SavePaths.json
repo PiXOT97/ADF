@@ -1,0 +1,35 @@
+{
+	"name": "ds_ADLS_SavePaths",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "az_ADLS_adftestsa0",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"PathOutput": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "ds_LzToBronze"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "paths_log.csv",
+				"folderPath": {
+					"value": "@dataset().PathOutput",
+					"type": "Expression"
+				},
+				"fileSystem": "medallion"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	}
+}

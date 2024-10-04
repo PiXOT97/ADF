@@ -20,6 +20,13 @@
 						"type": "DatasetReference"
 					},
 					"name": "OutputToParquet"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_ADLS_SavePaths",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
 				}
 			],
 			"transformations": [
@@ -34,10 +41,10 @@
 					"name": "RemoveNullPrice"
 				},
 				{
-					"name": "aggregate1"
+					"name": "UniquePaths"
 				},
 				{
-					"name": "derivedColumn1"
+					"name": "CreatePathsForSavedFiles"
 				}
 			],
 			"scriptLines": [
@@ -101,8 +108,9 @@
 				"          MonthColumn = toString(month({Created At})),",
 				"          DayColumn = toString(dayOfMonth({Created At}))) ~> AddTimestampColumn",
 				"SchmeaModification filter(!isNull(Price)) ~> RemoveNullPrice",
-				"derivedColumn1 aggregate(groupBy(FullPath)) ~> aggregate1",
-				"AddTimestampColumn derive(FullPath = concat('medallion/bronze/transaction_data/parquet/new/YearColumn=', YearColumn, '/MonthColumn=', MonthColumn, '/DayColumn=', DayColumn)) ~> derivedColumn1",
+				"CreatePathsForSavedFiles aggregate(groupBy(FullPath),",
+				"     Count = count(FullPath)) ~> UniquePaths",
+				"AddTimestampColumn derive(FullPath = concat('medallion/bronze/transaction_data/parquet/new/YearColumn=', YearColumn, '/MonthColumn=', MonthColumn, '/DayColumn=', DayColumn)) ~> CreatePathsForSavedFiles",
 				"AddTimestampColumn sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'parquet',",
@@ -145,7 +153,14 @@
 				"          YearColumn,",
 				"          MonthColumn,",
 				"          DayColumn",
-				"     )) ~> OutputToParquet"
+				"     )) ~> OutputToParquet",
+				"UniquePaths sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink1"
 			]
 		}
 	}
