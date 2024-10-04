@@ -125,16 +125,6 @@
 															"type": "Expression"
 														}
 													}
-												},
-												"linkedServiceParameters": {
-													"InputSource": {
-														"schemaLinkedService": {
-															"FolderPath": {
-																"value": "@concat('silver/transaction_data/parquet/new/YearColumn=2024/MonthColumn=5/',item().name)",
-																"type": "Expression"
-															}
-														}
-													}
 												}
 											},
 											"compute": {
