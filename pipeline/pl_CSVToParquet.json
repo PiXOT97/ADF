@@ -58,6 +58,8 @@
 									{
 										"name": "df_FileProcessingCSVToParquet",
 										"type": "ExecuteDataFlow",
+										"state": "Inactive",
+										"onInactiveMarkAs": "Succeeded",
 										"dependsOn": [
 											{
 												"activity": "StructurePass",
@@ -90,12 +92,6 @@
 															"type": "Expression"
 														},
 														"Main": "medallion"
-													},
-													"PathOutput": {
-														"PathOutput": {
-															"value": "@concat(pipeline().parameters.FolderOutput,'/paths')",
-															"type": "Expression"
-														}
 													}
 												}
 											},
