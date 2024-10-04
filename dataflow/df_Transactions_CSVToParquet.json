@@ -26,7 +26,7 @@
 						"referenceName": "ds_ADLS_SavePaths",
 						"type": "DatasetReference"
 					},
-					"name": "sink1"
+					"name": "PathOutput"
 				}
 			],
 			"transformations": [
@@ -160,7 +160,7 @@
 				"     preCommands: [],",
 				"     postCommands: [],",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> sink1"
+				"     skipDuplicateMapOutputs: true) ~> PathOutput"
 			]
 		}
 	}
