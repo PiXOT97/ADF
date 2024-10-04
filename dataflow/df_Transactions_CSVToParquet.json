@@ -32,6 +32,12 @@
 				},
 				{
 					"name": "RemoveNullPrice"
+				},
+				{
+					"name": "aggregate1"
+				},
+				{
+					"name": "derivedColumn1"
 				}
 			],
 			"scriptLines": [
@@ -95,6 +101,8 @@
 				"          MonthColumn = toString(month({Created At})),",
 				"          DayColumn = toString(dayOfMonth({Created At}))) ~> AddTimestampColumn",
 				"SchmeaModification filter(!isNull(Price)) ~> RemoveNullPrice",
+				"derivedColumn1 aggregate(groupBy(FullPath)) ~> aggregate1",
+				"AddTimestampColumn derive(FullPath = concat('medallion/bronze/transaction_data/parquet/new/YearColumn=', YearColumn, '/MonthColumn=', MonthColumn, '/DayColumn=', DayColumn)) ~> derivedColumn1",
 				"AddTimestampColumn sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'parquet',",
