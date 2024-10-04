@@ -97,8 +97,6 @@
 						{
 							"name": "CheckForFilesZip",
 							"type": "IfCondition",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "GetFilesRawNew",
