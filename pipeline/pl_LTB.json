@@ -1,0 +1,87 @@
+{
+	"name": "pl_LTB",
+	"properties": {
+		"variables": {
+			"path_container": {
+				"type": "String",
+				"defaultValue": "profi"
+			},
+			"path_lz_input": {
+				"type": "String",
+				"defaultValue": "landing_zone/input"
+			},
+			"path_lz_errors": {
+				"type": "String",
+				"defaultValue": "landing_zone/errors"
+			},
+			"path_lz_processed": {
+				"type": "String",
+				"defaultValue": "landing_zone/processed"
+			},
+			"path_b_input": {
+				"type": "String",
+				"defaultValue": "bronze/input"
+			},
+			"path_b_errors": {
+				"type": "String",
+				"defaultValue": "bronze/errors"
+			},
+			"path_b_processed": {
+				"type": "String",
+				"defaultValue": "bronze/processed"
+			},
+			"path_s_location_input": {
+				"type": "String",
+				"defaultValue": "silver/location_data/input"
+			},
+			"path_s_location_errors": {
+				"type": "String",
+				"defaultValue": "silver/location_data/errors"
+			},
+			"path_s_location_processed": {
+				"type": "String",
+				"defaultValue": "silver/location_data/processed"
+			},
+			"path_s_profile_input": {
+				"type": "String",
+				"defaultValue": "silver/profile_data/input"
+			},
+			"path_s_profile_errors": {
+				"type": "String",
+				"defaultValue": "silver/profile_data/errors"
+			},
+			"path_s_profile_processed": {
+				"type": "String",
+				"defaultValue": "silver/profile_data/processed"
+			},
+			"path_s_product_input": {
+				"type": "String",
+				"defaultValue": "silver/product_data/input"
+			},
+			"path_s_product_errors": {
+				"type": "String",
+				"defaultValue": "silver/product_data/errors"
+			},
+			"path_s_product_processed": {
+				"type": "String",
+				"defaultValue": "silver/product_data/processed"
+			},
+			"path_s_transaction_input": {
+				"type": "String",
+				"defaultValue": "silver/transaction_data/input"
+			},
+			"path_s_transaction_errors": {
+				"type": "String",
+				"defaultValue": "silver/transaction_data/errors"
+			},
+			"path_s_transaction_processed": {
+				"type": "String",
+				"defaultValue": "silver/transaction_data/processed"
+			}
+		},
+		"folder": {
+			"name": "pl_PROFI/pl_LTB"
+		},
+		"annotations": []
+	}
+}
