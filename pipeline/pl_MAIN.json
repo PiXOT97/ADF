@@ -1,6 +1,54 @@
 {
 	"name": "pl_MAIN",
 	"properties": {
+		"activities": [
+			{
+				"name": "pl_LTB",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_LTB",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"path_container": {
+							"value": "@variables('path_container')",
+							"type": "Expression"
+						},
+						"path_lz_input": {
+							"value": "@variables('path_lz_input')",
+							"type": "Expression"
+						},
+						"path_lz_errors": {
+							"value": "@variables('path_lz_errors')",
+							"type": "Expression"
+						},
+						"path_lz_processed": {
+							"value": "@variables('path_lz_processed')",
+							"type": "Expression"
+						},
+						"path_b_input": {
+							"value": "@variables('path_b_input')",
+							"type": "Expression"
+						},
+						"path_b_errors": {
+							"value": "@variables('path_b_errors')",
+							"type": "Expression"
+						},
+						"path_b_processed": {
+							"value": "@variables('path_b_processed')",
+							"type": "Expression"
+						}
+					}
+				}
+			}
+		],
 		"variables": {
 			"path_container": {
 				"type": "String",
