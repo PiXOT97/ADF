@@ -1,5 +1,5 @@
 {
-	"name": "pipeline1",
+	"name": "pl_Main_BronzeToSilver",
 	"properties": {
 		"activities": [
 			{
@@ -185,6 +185,9 @@
 			"DayFolders": {
 				"type": "Array"
 			}
+		},
+		"folder": {
+			"name": "RDI/pl_BronzeToSilver"
 		},
 		"annotations": [],
 		"lastPublishTime": "2024-10-03T16:03:43Z"
