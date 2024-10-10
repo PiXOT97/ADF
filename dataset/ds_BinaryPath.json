@@ -5,6 +5,14 @@
 			"referenceName": "az_ADLS_adftestsa0",
 			"type": "LinkedServiceReference"
 		},
+		"parameters": {
+			"Container": {
+				"type": "string"
+			},
+			"FilePath": {
+				"type": "string"
+			}
+		},
 		"folder": {
 			"name": "MAIN"
 		},
@@ -12,7 +20,15 @@
 		"type": "Binary",
 		"typeProperties": {
 			"location": {
-				"type": "AzureBlobFSLocation"
+				"type": "AzureBlobFSLocation",
+				"folderPath": {
+					"value": "@dataset().FilePath",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().Container",
+					"type": "Expression"
+				}
 			}
 		}
 	}
