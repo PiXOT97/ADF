@@ -3,49 +3,109 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "pl_LTB",
-				"type": "ExecutePipeline",
+				"name": "CheckForFiles",
+				"type": "GetMetadata",
 				"dependsOn": [],
 				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
 					"secureInput": false
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"pipeline": {
-						"referenceName": "pl_LTB",
-						"type": "PipelineReference"
-					},
-					"waitOnCompletion": true,
-					"parameters": {
-						"path_container": {
-							"value": "@variables('path_container')",
-							"type": "Expression"
-						},
-						"path_lz_input": {
-							"value": "@variables('path_lz_input')",
-							"type": "Expression"
-						},
-						"path_lz_errors": {
-							"value": "@variables('path_lz_errors')",
-							"type": "Expression"
-						},
-						"path_lz_processed": {
-							"value": "@variables('path_lz_processed')",
-							"type": "Expression"
-						},
-						"path_b_input": {
-							"value": "@variables('path_b_input')",
-							"type": "Expression"
-						},
-						"path_b_errors": {
-							"value": "@variables('path_b_errors')",
-							"type": "Expression"
-						},
-						"path_b_processed": {
-							"value": "@variables('path_b_processed')",
-							"type": "Expression"
+					"dataset": {
+						"referenceName": "ds_main_BinaryPath",
+						"type": "DatasetReference",
+						"parameters": {
+							"Container": {
+								"value": "@variables('path_container')",
+								"type": "Expression"
+							},
+							"FilePath": {
+								"value": "@variables('path_lz_input')",
+								"type": "Expression"
+							}
 						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
 					}
+				}
+			},
+			{
+				"name": "LzInputFiles",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "CheckForFiles",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('CheckForFiles').output.childItems",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "pl_LTB",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "pl_LTB",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"path_container": {
+										"value": "@variables('path_container')",
+										"type": "Expression"
+									},
+									"path_lz_input": {
+										"value": "@variables('path_lz_input')",
+										"type": "Expression"
+									},
+									"path_lz_errors": {
+										"value": "@variables('path_lz_errors')",
+										"type": "Expression"
+									},
+									"path_lz_processed": {
+										"value": "@variables('path_lz_processed')",
+										"type": "Expression"
+									},
+									"path_b_input": {
+										"value": "@variables('path_b_input')",
+										"type": "Expression"
+									},
+									"path_b_errors": {
+										"value": "@variables('path_b_errors')",
+										"type": "Expression"
+									},
+									"path_b_processed": {
+										"value": "@variables('path_b_processed')",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
 				}
 			}
 		],
