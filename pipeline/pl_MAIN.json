@@ -1,5 +1,5 @@
 {
-	"name": "pl_LTB",
+	"name": "pl_MAIN",
 	"properties": {
 		"variables": {
 			"path_container": {
@@ -80,7 +80,7 @@
 			}
 		},
 		"folder": {
-			"name": "pl_PROFI/pl_LTB"
+			"name": "pl_PROFI"
 		},
 		"annotations": []
 	}
