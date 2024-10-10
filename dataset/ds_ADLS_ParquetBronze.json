@@ -14,7 +14,7 @@
 			}
 		},
 		"folder": {
-			"name": "ds_LzToBronze"
+			"name": "RDI/ds_LzToBronze"
 		},
 		"annotations": [],
 		"type": "Parquet",

@@ -1,6 +1,9 @@
 {
-	"name": "dataflow1",
+	"name": "df_BTS",
 	"properties": {
+		"folder": {
+			"name": "RDI"
+		},
 		"type": "MappingDataFlow",
 		"typeProperties": {
 			"sources": [

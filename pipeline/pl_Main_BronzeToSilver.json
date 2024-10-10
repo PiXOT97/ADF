@@ -113,7 +113,7 @@
 										"userProperties": [],
 										"typeProperties": {
 											"dataflow": {
-												"referenceName": "dataflow1",
+												"referenceName": "df_BTS",
 												"type": "DataFlowReference",
 												"datasetParameters": {
 													"InputSource": {

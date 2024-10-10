@@ -2,7 +2,7 @@
 	"name": "df_Transactions_CSVToParquet_copy1",
 	"properties": {
 		"folder": {
-			"name": "BACKUP"
+			"name": "RDI/BACKUP"
 		},
 		"type": "MappingDataFlow",
 		"typeProperties": {

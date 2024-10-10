@@ -1,6 +1,9 @@
 {
-	"name": "df_Transactions_CSVToParquet",
+	"name": "df_LTB",
 	"properties": {
+		"folder": {
+			"name": "RDI"
+		},
 		"type": "MappingDataFlow",
 		"typeProperties": {
 			"sources": [

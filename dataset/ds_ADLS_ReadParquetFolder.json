@@ -11,7 +11,7 @@
 			}
 		},
 		"folder": {
-			"name": "ds_BronzeToSilver"
+			"name": "RDI/ds_BronzeToSilver"
 		},
 		"annotations": [],
 		"type": "Parquet",
