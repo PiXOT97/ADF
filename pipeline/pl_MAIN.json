@@ -101,6 +101,10 @@
 									"path_b_processed": {
 										"value": "@variables('path_b_processed')",
 										"type": "Expression"
+									},
+									"file_to_process": {
+										"value": "@item()",
+										"type": "Expression"
 									}
 								}
 							}

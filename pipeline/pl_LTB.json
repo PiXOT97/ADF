@@ -3,17 +3,54 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Switch1",
+				"name": "SleectTransition",
 				"type": "Switch",
 				"dependsOn": [],
 				"userProperties": [],
 				"typeProperties": {
+					"on": {
+						"value": "@{if(contains(pipeline().parameters.file_to_process, 'retail_data'), 'TransactionFile', if(contains(pipeline().parameters.file_to_process, 'product_data'), 'ProductFile', 'Default'))}\n",
+						"type": "Expression"
+					},
 					"cases": [
 						{
-							"value": "TransactionFile"
+							"value": "TransactionFile",
+							"activities": [
+								{
+									"name": "TRANS_FILE",
+									"type": "Wait",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"waitTimeInSeconds": 1
+									}
+								}
+							]
 						},
 						{
-							"value": "ProductFile"
+							"value": "ProductFile",
+							"activities": [
+								{
+									"name": "PROD_FILE",
+									"type": "Wait",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"waitTimeInSeconds": 1
+									}
+								}
+							]
+						}
+					],
+					"defaultActivities": [
+						{
+							"name": "WRONG_FILE",
+							"type": "Wait",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"waitTimeInSeconds": 1
+							}
 						}
 					]
 				}
@@ -47,6 +84,9 @@
 			"path_b_processed": {
 				"type": "String",
 				"defaultValue": "bronze/processed"
+			},
+			"file_to_process": {
+				"type": "string"
 			}
 		},
 		"folder": {
