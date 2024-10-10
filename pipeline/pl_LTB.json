@@ -43,7 +43,7 @@
 		"parameters": {
 			"path_container": {
 				"type": "String",
-				"defaultValue": "profi"
+				"defaultValue": "vendor"
 			},
 			"path_lz_input": {
 				"type": "String",
