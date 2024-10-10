@@ -3,40 +3,19 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "ChecForFiles",
-				"type": "GetMetadata",
+				"name": "Switch1",
+				"type": "Switch",
 				"dependsOn": [],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
 				"userProperties": [],
 				"typeProperties": {
-					"dataset": {
-						"referenceName": "ds_main_BinaryPath",
-						"type": "DatasetReference",
-						"parameters": {
-							"Container": {
-								"value": "@pipeline().parameters.path_container",
-								"type": "Expression"
-							},
-							"FilePath": {
-								"value": "@pipeline().parameters.path_lz_input",
-								"type": "Expression"
-							}
+					"cases": [
+						{
+							"value": "TransactionFile"
+						},
+						{
+							"value": "ProductFile"
 						}
-					},
-					"fieldList": [],
-					"storeSettings": {
-						"type": "AzureBlobFSReadSettings",
-						"enablePartitionDiscovery": false
-					},
-					"formatSettings": {
-						"type": "BinaryReadSettings"
-					}
+					]
 				}
 			}
 		],
