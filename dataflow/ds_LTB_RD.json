@@ -2,7 +2,7 @@
 	"name": "ds_LTB_RD",
 	"properties": {
 		"folder": {
-			"name": "ds_PROFI"
+			"name": "ds_PROFI/ds_LTB"
 		},
 		"type": "MappingDataFlow",
 		"typeProperties": {
