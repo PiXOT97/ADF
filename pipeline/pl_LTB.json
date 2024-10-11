@@ -62,6 +62,16 @@
 														"value": "@pipeline().parameters.file_to_process",
 														"type": "Expression"
 													}
+												},
+												"OutputParquet": {
+													"Container": {
+														"value": "@pipeline().parameters.path_container",
+														"type": "Expression"
+													},
+													"FilePath": {
+														"value": "@concat(pipeline().parameters.path_b_input,'/',pipeline().parameters.file_to_process)",
+														"type": "Expression"
+													}
 												}
 											}
 										},

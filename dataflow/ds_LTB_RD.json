@@ -15,12 +15,57 @@
 					"name": "RetailDataFile"
 				}
 			],
-			"sinks": [],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_main_ParquetPath",
+						"type": "DatasetReference"
+					},
+					"name": "OutputParquet"
+				}
+			],
 			"transformations": [],
 			"scriptLines": [
-				"source(allowSchemaDrift: true,",
-				"     validateSchema: false,",
-				"     ignoreNoFilesFound: false) ~> RetailDataFile"
+				"parameters{",
+				"     file_to_processs as string",
+				"}",
+				"source(output(",
+				"          {Transaction ID} as long,",
+				"          {Store Name} as string,",
+				"          {Store ID} as integer,",
+				"          {Sales Channel} as string,",
+				"          {Client ID} as long,",
+				"          Date as string,",
+				"          Timestamp as string,",
+				"          Brand as string,",
+				"          {Brand ID} as integer,",
+				"          {Product Name} as string,",
+				"          {Product Id} as integer,",
+				"          {SKU ID} as integer,",
+				"          {SKU Name} as string,",
+				"          {Sales Barcode} as long,",
+				"          {Catalog Name} as string,",
+				"          {Catalog ID} as integer,",
+				"          Quantity as double,",
+				"          Price as double,",
+				"          Discount as double,",
+				"          {Payment mode} as string,",
+				"          GROSS_RETAIL_AMT as double,",
+				"          GROSS_TRANS_AMT as double,",
+				"          NET_RETAIL_AMT as double,",
+				"          NET_TRANS_AMT as double",
+				"     ),",
+				"     allowSchemaDrift: false,",
+				"     validateSchema: true,",
+				"     ignoreNoFilesFound: false) ~> RetailDataFile",
+				"RetailDataFile sink(allowSchemaDrift: false,",
+				"     validateSchema: true,",
+				"     format: 'parquet',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> OutputParquet"
 			]
 		}
 	}
