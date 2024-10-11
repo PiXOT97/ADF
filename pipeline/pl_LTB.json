@@ -46,24 +46,8 @@
 									"userProperties": [],
 									"typeProperties": {
 										"dataflow": {
-											"referenceName": "ds_LTB_RD",
-											"type": "DataFlowReference",
-											"datasetParameters": {
-												"RetailDataFile": {
-													"Container": {
-														"value": "@pipeline().parameters.path_container",
-														"type": "Expression"
-													},
-													"FilePath": {
-														"value": "@pipeline().parameters.path_lz_input",
-														"type": "Expression"
-													},
-													"File": {
-														"value": "@pipeline().parameters.file_to_process",
-														"type": "Expression"
-													}
-												}
-											}
+											"referenceName": "rdi_df_BTS",
+											"type": "DataFlowReference"
 										},
 										"integrationRuntime": {
 											"referenceName": "NewIntegrationRuntime",
