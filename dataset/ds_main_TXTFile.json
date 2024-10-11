@@ -1,0 +1,24 @@
+{
+	"name": "ds_main_TXTFile",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "az_ADLS_adftestsa0",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "ds_PROFI"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation"
+			},
+			"columnDelimiter": "\t",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": ""
+		},
+		"schema": []
+	}
+}

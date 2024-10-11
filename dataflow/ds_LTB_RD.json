@@ -6,11 +6,21 @@
 		},
 		"type": "MappingDataFlow",
 		"typeProperties": {
-			"sources": [],
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_main_TXTFile",
+						"type": "DatasetReference"
+					},
+					"name": "RetailDataFile"
+				}
+			],
 			"sinks": [],
 			"transformations": [],
 			"scriptLines": [
-				""
+				"source(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> RetailDataFile"
 			]
 		}
 	}
