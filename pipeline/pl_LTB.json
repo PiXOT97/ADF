@@ -24,6 +24,37 @@
 									"typeProperties": {
 										"waitTimeInSeconds": 1
 									}
+								},
+								{
+									"name": "ds_LTB_RD",
+									"type": "ExecuteDataFlow",
+									"dependsOn": [
+										{
+											"activity": "TRANS_FILE",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataflow": {
+											"referenceName": "ds_LTB_RD",
+											"type": "DataFlowReference"
+										},
+										"integrationRuntime": {
+											"referenceName": "NewIntegrationRuntime",
+											"type": "IntegrationRuntimeReference"
+										},
+										"traceLevel": "Fine"
+									}
 								}
 							]
 						},

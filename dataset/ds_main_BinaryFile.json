@@ -1,0 +1,42 @@
+{
+	"name": "ds_main_BinaryFile",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "az_ADLS_adftestsa0",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"Container": {
+				"type": "string"
+			},
+			"FilePath": {
+				"type": "string"
+			},
+			"File": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "ds_PROFI"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().File",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().FilePath",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().Container",
+					"type": "Expression"
+				}
+			}
+		}
+	}
+}
