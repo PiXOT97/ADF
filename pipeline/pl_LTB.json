@@ -9,7 +9,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"on": {
-						"value": "@{if(contains(toLower(pipeline().parameters.file_to_process), 'retail_data'), 'TransactionFile', if(contains(toLower(pipeline().parameters.file_to_process), 'product_data'), 'ProductFile', 'Default'))}",
+						"value": "@{if(contains(toLower(pipeline().parameters.file_to_process), 'sales_data'), 'TransactionFile', if(contains(toLower(pipeline().parameters.file_to_process), 'product_data'), 'ProductFile', 'Default'))}",
 						"type": "Expression"
 					},
 					"cases": [
