@@ -1,0 +1,196 @@
+{
+	"name": "pl_BTS",
+	"properties": {
+		"activities": [
+			{
+				"name": "SleectTransition",
+				"type": "Switch",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"on": {
+						"value": "@{if(contains(toLower(pipeline().parameters.file_to_process), 'sales_data'), 'TransactionFile', if(contains(toLower(pipeline().parameters.file_to_process), 'product_data'), 'ProductFile', 'Default'))}",
+						"type": "Expression"
+					},
+					"cases": [
+						{
+							"value": "TransactionFile",
+							"activities": [
+								{
+									"name": "TRANS_FILE",
+									"type": "Wait",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"waitTimeInSeconds": 1
+									}
+								},
+								{
+									"name": "ds_LTB_RD",
+									"type": "ExecuteDataFlow",
+									"dependsOn": [
+										{
+											"activity": "TRANS_FILE",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataflow": {
+											"referenceName": "ds_LTB_RD",
+											"type": "DataFlowReference",
+											"parameters": {
+												"file_to_processs": {
+													"value": "'@{pipeline().parameters.file_to_process}'",
+													"type": "Expression"
+												}
+											},
+											"datasetParameters": {
+												"RetailDataFile": {
+													"Container": {
+														"value": "@pipeline().parameters.path_container",
+														"type": "Expression"
+													},
+													"FilePath": {
+														"value": "@pipeline().parameters.path_lz_input",
+														"type": "Expression"
+													},
+													"File": {
+														"value": "@pipeline().parameters.file_to_process",
+														"type": "Expression"
+													}
+												},
+												"OutputParquet": {
+													"Container": {
+														"value": "@pipeline().parameters.path_container",
+														"type": "Expression"
+													},
+													"FilePath": {
+														"value": "@concat(pipeline().parameters.path_b_input,'/',pipeline().parameters.file_to_process)",
+														"type": "Expression"
+													}
+												}
+											}
+										},
+										"integrationRuntime": {
+											"referenceName": "NewIntegrationRuntime",
+											"type": "IntegrationRuntimeReference"
+										},
+										"traceLevel": "Fine"
+									}
+								}
+							]
+						},
+						{
+							"value": "ProductFile",
+							"activities": [
+								{
+									"name": "PROD_FILE",
+									"type": "Wait",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"waitTimeInSeconds": 1
+									}
+								}
+							]
+						}
+					],
+					"defaultActivities": [
+						{
+							"name": "WRONG_FILE",
+							"type": "Wait",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"waitTimeInSeconds": 1
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"path_container": {
+				"type": "String",
+				"defaultValue": "vendor"
+			},
+			"path_b_input": {
+				"type": "String",
+				"defaultValue": "bronze/input"
+			},
+			"path_b_errors": {
+				"type": "String",
+				"defaultValue": "bronze/errors"
+			},
+			"path_b_processed": {
+				"type": "String",
+				"defaultValue": "bronze/processed"
+			},
+			"path_s_location_input": {
+				"type": "String",
+				"defaultValue": "silver/location_data/input"
+			},
+			"path_s_location_errors": {
+				"type": "String",
+				"defaultValue": "silver/location_data/errors"
+			},
+			"path_s_location_processed": {
+				"type": "String",
+				"defaultValue": "silver/location_data/processed"
+			},
+			"path_s_profile_input": {
+				"type": "String",
+				"defaultValue": "silver/profile_data/input"
+			},
+			"path_s_profile_errors": {
+				"type": "String",
+				"defaultValue": "silver/profile_data/errors"
+			},
+			"path_s_profile_processed": {
+				"type": "String",
+				"defaultValue": "silver/profile_data/processed"
+			},
+			"path_s_product_input": {
+				"type": "String",
+				"defaultValue": "silver/product_data/input"
+			},
+			"path_s_product_errors": {
+				"type": "String",
+				"defaultValue": "silver/product_data/errors"
+			},
+			"path_s_product_processed": {
+				"type": "String",
+				"defaultValue": "silver/product_data/processed"
+			},
+			"path_s_transaction_input": {
+				"type": "String",
+				"defaultValue": "silver/transaction_data/input"
+			},
+			"path_s_transaction_errors": {
+				"type": "String",
+				"defaultValue": "silver/transaction_data/errors"
+			},
+			"path_s_transaction_processed": {
+				"type": "String",
+				"defaultValue": "silver/transaction_data/processed"
+			},
+			"file_to_process": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "pl_PROFI/pl_BTS"
+		},
+		"annotations": []
+	}
+}
