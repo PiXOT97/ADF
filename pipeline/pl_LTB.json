@@ -49,6 +49,12 @@
 											"referenceName": "ds_LTB_RD",
 											"type": "DataFlowReference"
 										},
+										"staging": {
+											"linkedService": {
+												"referenceName": "az_ADLS_adftestsa0",
+												"type": "LinkedServiceReference"
+											}
+										},
 										"integrationRuntime": {
 											"referenceName": "NewIntegrationRuntime",
 											"type": "IntegrationRuntimeReference"
