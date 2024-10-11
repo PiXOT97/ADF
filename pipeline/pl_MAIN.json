@@ -139,28 +139,6 @@
 									}
 								}
 							}
-						},
-						{
-							"name": "pl_BTS_copy1",
-							"type": "ExecutePipeline",
-							"dependsOn": [],
-							"policy": {
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"pipeline": {
-									"referenceName": "pl_BTS",
-									"type": "PipelineReference"
-								},
-								"waitOnCompletion": true,
-								"parameters": {
-									"path_container": {
-										"value": "@variables('path_container')",
-										"type": "Expression"
-									}
-								}
-							}
 						}
 					]
 				}
