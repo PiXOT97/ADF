@@ -18,7 +18,7 @@
 			"sinks": [
 				{
 					"dataset": {
-						"referenceName": "ds_main_ParquetPath",
+						"referenceName": "ds_ADLS_ReadParquetFolder",
 						"type": "DatasetReference"
 					},
 					"name": "OutputParquet"

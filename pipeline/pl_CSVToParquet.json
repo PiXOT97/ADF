@@ -76,7 +76,7 @@
 										"userProperties": [],
 										"typeProperties": {
 											"dataflow": {
-												"referenceName": "df_LTB",
+												"referenceName": "rdi_df_LTB",
 												"type": "DataFlowReference",
 												"datasetParameters": {
 													"SchemaValidationCSV": {
