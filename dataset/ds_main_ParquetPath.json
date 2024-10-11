@@ -11,9 +11,6 @@
 			},
 			"FilePath": {
 				"type": "string"
-			},
-			"File": {
-				"type": "string"
 			}
 		},
 		"folder": {
