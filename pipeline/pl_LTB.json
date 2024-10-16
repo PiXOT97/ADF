@@ -9,7 +9,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"on": {
-						"value": "@{if(contains(toLower(pipeline().parameters.file_to_process), 'sales_data'), 'TransactionFile', if(contains(toLower(pipeline().parameters.file_to_process), 'product_data'), 'ProductFile', 'Default'))}",
+						"value": "@{if(contains(toLower(pipeline().parameters.file_to_process), 'sales_data'), 'TransactionFile', if(contains(toLower(pipeline().parameters.file_to_process), 'products'), 'ProductFile', 'Default'))}",
 						"type": "Expression"
 					},
 					"cases": [
@@ -55,7 +55,7 @@
 												}
 											},
 											"datasetParameters": {
-												"RetailDataFile": {
+												"SalesDataFile": {
 													"Container": {
 														"value": "@pipeline().parameters.path_container",
 														"type": "Expression"
@@ -100,6 +100,51 @@
 									"userProperties": [],
 									"typeProperties": {
 										"waitTimeInSeconds": 1
+									}
+								},
+								{
+									"name": "ds_LTB_PD",
+									"type": "ExecuteDataFlow",
+									"dependsOn": [
+										{
+											"activity": "PROD_FILE",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataflow": {
+											"referenceName": "ds_LTB_PD",
+											"type": "DataFlowReference",
+											"datasetParameters": {
+												"ProductDataFile": {
+													"Container": {
+														"value": "@pipeline().parameters.path_container",
+														"type": "Expression"
+													},
+													"FilePath": "@pipeline().parameters.path_lz_input",
+													"File": "@pipeline().parameters.file_to_process"
+												},
+												"OutputParquet": {
+													"Container": "@pipeline().parameters.path_container",
+													"FilePath": "@concat(pipeline().parameters.path_b_input,'/',pipeline().parameters.file_to_process)"
+												}
+											}
+										},
+										"integrationRuntime": {
+											"referenceName": "NewIntegrationRuntime",
+											"type": "IntegrationRuntimeReference"
+										},
+										"traceLevel": "Fine"
 									}
 								}
 							]
