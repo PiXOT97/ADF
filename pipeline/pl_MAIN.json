@@ -114,6 +114,8 @@
 						{
 							"name": "pl_BTS",
 							"type": "ExecutePipeline",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "pl_LTB",
@@ -131,13 +133,7 @@
 									"referenceName": "pl_BTS",
 									"type": "PipelineReference"
 								},
-								"waitOnCompletion": true,
-								"parameters": {
-									"path_container": {
-										"value": "@variables('path_container')",
-										"type": "Expression"
-									}
-								}
+								"waitOnCompletion": true
 							}
 						}
 					]
