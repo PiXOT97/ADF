@@ -6,11 +6,46 @@
 		},
 		"type": "MappingDataFlow",
 		"typeProperties": {
-			"sources": [],
-			"sinks": [],
-			"transformations": [],
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_main_TXTFile",
+						"type": "DatasetReference"
+					},
+					"name": "ProductDataFile"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_main_ParquetPath",
+						"type": "DatasetReference"
+					},
+					"name": "OutputParquet"
+				}
+			],
+			"transformations": [
+				{
+					"name": "InterimRename"
+				}
+			],
 			"scriptLines": [
-				""
+				"parameters{",
+				"     file_to_processs as string",
+				"}",
+				"source(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> ProductDataFile",
+				"ProductDataFile select(skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> InterimRename",
+				"InterimRename sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'parquet',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> OutputParquet"
 			]
 		}
 	}
