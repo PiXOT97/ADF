@@ -19,7 +19,7 @@
 						"referenceName": "ds_main_ParquetPath",
 						"type": "DatasetReference"
 					},
-					"name": "source1"
+					"name": "ExistingProductData"
 				}
 			],
 			"sinks": [
@@ -40,6 +40,9 @@
 				},
 				{
 					"name": "RemoveNullValues"
+				},
+				{
+					"name": "aggregate1"
 				}
 			],
 			"scriptLines": [
@@ -122,7 +125,7 @@
 				"source(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     ignoreNoFilesFound: false,",
-				"     format: 'parquet') ~> source1",
+				"     format: 'parquet') ~> ExistingProductData",
 				"ProductDataFile select(mapColumn(",
 				"          externalCatalogName = catalog_name,",
 				"          externalCatalogId = catalog_id,",
@@ -164,7 +167,8 @@
 				"          skuId = '',",
 				"          unique = concat(toString(externalCatalogId),toString(externalBrandId),toString(externalSkuId))) ~> AddAdditionalCol",
 				"AddAdditionalCol filter(!isNull(externalBrandId) && !isNull(externalSkuId) && !isNull(externalCatalogId)) ~> RemoveNullValues",
-				"RemoveNullValues sink(allowSchemaDrift: true,",
+				"RemoveNullValues aggregate(groupBy(unique)) ~> aggregate1",
+				"aggregate1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'parquet',",
 				"     umask: 0022,",
