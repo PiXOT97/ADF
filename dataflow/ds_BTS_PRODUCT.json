@@ -30,6 +30,9 @@
 				},
 				{
 					"name": "AddAdditionalCol"
+				},
+				{
+					"name": "RemoveNullValues"
 				}
 			],
 			"scriptLines": [
@@ -148,7 +151,8 @@
 				"DropAndRename derive(catalogId = '',",
 				"          brandId = '',",
 				"          skuId = '') ~> AddAdditionalCol",
-				"AddAdditionalCol sink(allowSchemaDrift: true,",
+				"AddAdditionalCol filter(!isNull(externalBrandId) && !isNull(externalSkuId) && !isNull(externalCatalogId)) ~> RemoveNullValues",
+				"RemoveNullValues sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'parquet',",
 				"     umask: 0022,",
