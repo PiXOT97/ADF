@@ -114,8 +114,6 @@
 						{
 							"name": "pl_BTS",
 							"type": "ExecutePipeline",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Skipped",
 							"dependsOn": [
 								{
 									"activity": "pl_LTB",
