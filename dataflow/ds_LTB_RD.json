@@ -26,7 +26,7 @@
 			],
 			"transformations": [
 				{
-					"name": "select1"
+					"name": "InterimRename"
 				}
 			],
 			"scriptLines": [
@@ -89,8 +89,8 @@
 				"          net_trans_amt = NET_TRANS_AMT",
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> select1",
-				"select1 sink(allowSchemaDrift: true,",
+				"     skipDuplicateMapOutputs: true) ~> InterimRename",
+				"InterimRename sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'parquet',",
 				"     umask: 0022,",
