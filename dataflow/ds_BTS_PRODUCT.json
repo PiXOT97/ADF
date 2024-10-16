@@ -13,6 +13,13 @@
 						"type": "DatasetReference"
 					},
 					"name": "ProductDataFile"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_main_ParquetPath",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
 				}
 			],
 			"sinks": [
@@ -112,6 +119,10 @@
 				"     validateSchema: false,",
 				"     ignoreNoFilesFound: false,",
 				"     format: 'parquet') ~> ProductDataFile",
+				"source(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'parquet') ~> source1",
 				"ProductDataFile select(mapColumn(",
 				"          externalCatalogName = catalog_name,",
 				"          externalCatalogId = catalog_id,",
@@ -150,7 +161,8 @@
 				"     skipDuplicateMapOutputs: false) ~> DropAndRename",
 				"DropAndRename derive(catalogId = '',",
 				"          brandId = '',",
-				"          skuId = '') ~> AddAdditionalCol",
+				"          skuId = '',",
+				"          unique = concat(toString(externalCatalogId),toString(externalBrandId),toString(externalSkuId))) ~> AddAdditionalCol",
 				"AddAdditionalCol filter(!isNull(externalBrandId) && !isNull(externalSkuId) && !isNull(externalCatalogId)) ~> RemoveNullValues",
 				"RemoveNullValues sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
