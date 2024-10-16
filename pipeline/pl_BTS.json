@@ -44,7 +44,7 @@
 									"type": "ExecuteDataFlow",
 									"dependsOn": [
 										{
-											"activity": "PROD_FILE",
+											"activity": "Copy data1",
 											"dependencyConditions": [
 												"Succeeded"
 											]
@@ -79,6 +79,13 @@
 														"type": "Expression"
 													}
 												},
+												"ExistingProductFile": {
+													"Container": "@pipeline().parameters.path_container",
+													"FilePath": {
+														"value": "@pipeline().parameters.path_s_product_processed",
+														"type": "Expression"
+													}
+												},
 												"OutputParquet": {
 													"Container": {
 														"value": "@pipeline().parameters.path_container",
@@ -97,6 +104,84 @@
 										},
 										"traceLevel": "Fine"
 									}
+								},
+								{
+									"name": "Copy data1",
+									"type": "Copy",
+									"dependsOn": [
+										{
+											"activity": "PROD_FILE",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "ParquetSource",
+											"storeSettings": {
+												"type": "AzureBlobFSReadSettings",
+												"recursive": true,
+												"enablePartitionDiscovery": false
+											},
+											"formatSettings": {
+												"type": "ParquetReadSettings"
+											}
+										},
+										"sink": {
+											"type": "ParquetSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings",
+												"copyBehavior": "FlattenHierarchy"
+											},
+											"formatSettings": {
+												"type": "ParquetWriteSettings"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "ds_main_ParquetPath",
+											"type": "DatasetReference",
+											"parameters": {
+												"Container": {
+													"value": "@pipeline().parameters.path_container",
+													"type": "Expression"
+												},
+												"FilePath": "@pipeline().parameters.path_s_product_input"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "ds_main_ParquetPath",
+											"type": "DatasetReference",
+											"parameters": {
+												"Container": "@pipeline().parameters.path_container",
+												"FilePath": {
+													"value": "@pipeline().parameters.path_s_product_processed",
+													"type": "Expression"
+												}
+											}
+										}
+									]
 								}
 							]
 						}
