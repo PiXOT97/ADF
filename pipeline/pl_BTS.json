@@ -9,7 +9,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"on": {
-						"value": "@{if(contains(toLower(pipeline().parameters.file_to_process), 'sales_data'), 'TransactionFile', if(contains(toLower(pipeline().parameters.file_to_process), 'product_data'), 'ProductFile', 'Default'))}",
+						"value": "@{if(contains(toLower(pipeline().parameters.file_to_process), 'sales_data'), 'TransactionFile', if(contains(toLower(pipeline().parameters.file_to_process), 'products'), 'ProductFile', 'Default'))}",
 						"type": "Expression"
 					},
 					"cases": [
@@ -75,7 +75,7 @@
 														"type": "Expression"
 													},
 													"FilePath": {
-														"value": "@concat(pipeline().parameters.path_container,'/',pipeline().parameters.file_to_process)",
+														"value": "@concat(pipeline().parameters.path_b_input,'/',pipeline().parameters.file_to_process)",
 														"type": "Expression"
 													}
 												},
