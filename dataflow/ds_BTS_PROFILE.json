@@ -13,6 +13,13 @@
 						"type": "DatasetReference"
 					},
 					"name": "TransactionDataFile"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_main_ParquetPath",
+						"type": "DatasetReference"
+					},
+					"name": "ExistingProfileFile"
 				}
 			],
 			"sinks": [
@@ -72,6 +79,17 @@
 				"     validateSchema: true,",
 				"     ignoreNoFilesFound: false,",
 				"     format: 'parquet') ~> TransactionDataFile",
+				"source(output(",
+				"          transactionId as long,",
+				"          lcoationId as integer,",
+				"          clientId as long,",
+				"          date as string,",
+				"          timestamp as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'parquet') ~> ExistingProfileFile",
 				"TransactionDataFile select(mapColumn(",
 				"          transactionId = transaction_id,",
 				"          lcoationId = store_id,",
@@ -81,7 +99,7 @@
 				"     ),",
 				"     skipDuplicateMapInputs: false,",
 				"     skipDuplicateMapOutputs: false) ~> DropAndRename",
-				"DropAndRename union(byName: true)~> JoinExitingAndNew",
+				"DropAndRename, ExistingProfileFile union(byName: true)~> JoinExitingAndNew",
 				"JoinExitingAndNew aggregate(groupBy(hashcolumn = sha2(256,clientId)),",
 				"     each(match(true()), $$ = first($$))) ~> RemoveDuplicates",
 				"RemoveDuplicates select(mapColumn(",

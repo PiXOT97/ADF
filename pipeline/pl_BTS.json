@@ -357,7 +357,7 @@
 											"parameters": {
 												"Container": "@pipeline().parameters.path_container",
 												"FilePath": {
-													"value": "@pipeline().parameters.path_s_location_processed",
+													"value": "@pipeline().parameters.path_s_profile_processed",
 													"type": "Expression"
 												}
 											}
