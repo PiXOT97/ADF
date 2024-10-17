@@ -249,13 +249,20 @@
 														"type": "Expression"
 													}
 												},
+												"ExitingPROFILEFile": {
+													"Container": "@pipeline().parameters.path_container",
+													"FilePath": {
+														"value": "@pipeline().parameters.path_s_profile_processed",
+														"type": "Expression"
+													}
+												},
 												"OutputParquet": {
 													"Container": {
 														"value": "@pipeline().parameters.path_container",
 														"type": "Expression"
 													},
 													"FilePath": {
-														"value": "@pipeline().parameters.path_s_location_input",
+														"value": "@pipeline().parameters.path_s_profile_input",
 														"type": "Expression"
 													}
 												}
@@ -351,7 +358,7 @@
 									]
 								},
 								{
-									"name": "LOCATION_ClearProc_copy1",
+									"name": "PROFILE_ClearProc",
 									"type": "Delete",
 									"dependsOn": [
 										{
@@ -390,6 +397,78 @@
 											"recursive": true,
 											"enablePartitionDiscovery": false
 										}
+									}
+								},
+								{
+									"name": "ds_BTS_TRANSACTION",
+									"type": "ExecuteDataFlow",
+									"dependsOn": [
+										{
+											"activity": "LOCATION_ClearProc",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										},
+										{
+											"activity": "PROFILE_ClearProc",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataflow": {
+											"referenceName": "ds_BTS_LOCATION",
+											"type": "DataFlowReference",
+											"parameters": {
+												"file_to_processs": {
+													"value": "'@{pipeline().parameters.file_to_process}'",
+													"type": "Expression"
+												}
+											},
+											"datasetParameters": {
+												"TransactionDataFile": {
+													"Container": {
+														"value": "@pipeline().parameters.path_container",
+														"type": "Expression"
+													},
+													"FilePath": {
+														"value": "@concat(pipeline().parameters.path_b_input,'/',pipeline().parameters.file_to_process)",
+														"type": "Expression"
+													}
+												},
+												"ExitingLocationFile": {
+													"Container": "@pipeline().parameters.path_container",
+													"FilePath": {
+														"value": "@pipeline().parameters.path_s_location_processed",
+														"type": "Expression"
+													}
+												},
+												"OutputParquet": {
+													"Container": {
+														"value": "@pipeline().parameters.path_container",
+														"type": "Expression"
+													},
+													"FilePath": {
+														"value": "@pipeline().parameters.path_s_location_input",
+														"type": "Expression"
+													}
+												}
+											}
+										},
+										"integrationRuntime": {
+											"referenceName": "NewIntegrationRuntime",
+											"type": "IntegrationRuntimeReference"
+										},
+										"traceLevel": "Fine"
 									}
 								}
 							]
