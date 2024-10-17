@@ -1,0 +1,134 @@
+{
+	"name": "ds_BTS_CLIENT",
+	"properties": {
+		"folder": {
+			"name": "ds_PROFI/ds_BTS"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_main_ParquetPath",
+						"type": "DatasetReference"
+					},
+					"name": "TransactionDataFile"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_main_ParquetPath",
+						"type": "DatasetReference"
+					},
+					"name": "ExitingClientFile"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_main_ParquetPath",
+						"type": "DatasetReference"
+					},
+					"name": "OutputParquet"
+				}
+			],
+			"transformations": [
+				{
+					"name": "DropAndRename"
+				},
+				{
+					"name": "JoinExitingAndNew"
+				},
+				{
+					"name": "RemoveDuplicates"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "derivedColumn1"
+				}
+			],
+			"scriptLines": [
+				"parameters{",
+				"     file_to_processs as string",
+				"}",
+				"source(output(",
+				"          transaction_id as long,",
+				"          store_name as string,",
+				"          store_id as integer,",
+				"          sales_chanel as string,",
+				"          client_id as long,",
+				"          date as string,",
+				"          timestamp as string,",
+				"          brand as string,",
+				"          brand_id as integer,",
+				"          product_name as string,",
+				"          product_id as integer,",
+				"          sku_id as integer,",
+				"          sku_name as string,",
+				"          sales_barcode as long,",
+				"          catalog_name as string,",
+				"          catalog_id as integer,",
+				"          quantity as double,",
+				"          price as double,",
+				"          discount as double,",
+				"          payment_mode as string,",
+				"          gross_retail_amt as double,",
+				"          gross_trans_amt as double,",
+				"          net_retail_amt as double,",
+				"          net_trans_amt as double",
+				"     ),",
+				"     allowSchemaDrift: false,",
+				"     validateSchema: true,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'parquet') ~> TransactionDataFile",
+				"source(output(",
+				"          locationName as string,",
+				"          locationId as integer,",
+				"          timezone as string,",
+				"          industry as string",
+				"     ),",
+				"     allowSchemaDrift: false,",
+				"     validateSchema: true,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'parquet') ~> ExitingClientFile",
+				"derivedColumn1 select(mapColumn(",
+				"          locationName = store_name,",
+				"          locationId = store_id,",
+				"          timezone,",
+				"          industry",
+				"     ),",
+				"     skipDuplicateMapInputs: false,",
+				"     skipDuplicateMapOutputs: false) ~> DropAndRename",
+				"DropAndRename, ExitingClientFile union(byName: true)~> JoinExitingAndNew",
+				"JoinExitingAndNew aggregate(groupBy(hashcolumn = sha2(256,locationId)),",
+				"     each(match(true()), $$ = first($$))) ~> RemoveDuplicates",
+				"RemoveDuplicates select(mapColumn(",
+				"          locationName,",
+				"          locationId,",
+				"          timezone,",
+				"          industry",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"TransactionDataFile derive(timezone = 'Europe/Bucharest',",
+				"          industry = 'retail') ~> derivedColumn1",
+				"select1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'parquet',",
+				"     truncate: true,",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     mapColumn(",
+				"          locationName,",
+				"          locationId,",
+				"          timezone,",
+				"          industry",
+				"     )) ~> OutputParquet"
+			]
+		}
+	}
+}
