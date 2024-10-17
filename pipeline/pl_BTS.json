@@ -249,13 +249,6 @@
 														"type": "Expression"
 													}
 												},
-												"ExitingPROFILEFile": {
-													"Container": "@pipeline().parameters.path_container",
-													"FilePath": {
-														"value": "@pipeline().parameters.path_s_profile_processed",
-														"type": "Expression"
-													}
-												},
 												"OutputParquet": {
 													"Container": {
 														"value": "@pipeline().parameters.path_container",

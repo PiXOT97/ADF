@@ -13,13 +13,6 @@
 						"type": "DatasetReference"
 					},
 					"name": "TransactionDataFile"
-				},
-				{
-					"dataset": {
-						"referenceName": "ds_main_ParquetPath",
-						"type": "DatasetReference"
-					},
-					"name": "ExitingPROFILEFile"
 				}
 			],
 			"sinks": [
@@ -43,9 +36,6 @@
 				},
 				{
 					"name": "select1"
-				},
-				{
-					"name": "derivedColumn1"
 				}
 			],
 			"scriptLines": [
@@ -82,37 +72,27 @@
 				"     validateSchema: true,",
 				"     ignoreNoFilesFound: false,",
 				"     format: 'parquet') ~> TransactionDataFile",
-				"source(output(",
-				"          locationName as string,",
-				"          locationId as integer,",
-				"          timezone as string,",
-				"          industry as string",
-				"     ),",
-				"     allowSchemaDrift: false,",
-				"     validateSchema: true,",
-				"     ignoreNoFilesFound: false,",
-				"     format: 'parquet') ~> ExitingPROFILEFile",
-				"derivedColumn1 select(mapColumn(",
-				"          locationName = store_name,",
-				"          locationId = store_id,",
-				"          timezone,",
-				"          industry",
+				"TransactionDataFile select(mapColumn(",
+				"          transactionId = transaction_id,",
+				"          lcoationId = store_id,",
+				"          clientId = client_id,",
+				"          date,",
+				"          timestamp",
 				"     ),",
 				"     skipDuplicateMapInputs: false,",
 				"     skipDuplicateMapOutputs: false) ~> DropAndRename",
-				"DropAndRename, ExitingPROFILEFile union(byName: true)~> JoinExitingAndNew",
-				"JoinExitingAndNew aggregate(groupBy(hashcolumn = sha2(256,locationId)),",
+				"DropAndRename union(byName: true)~> JoinExitingAndNew",
+				"JoinExitingAndNew aggregate(groupBy(hashcolumn = sha2(256,clientId)),",
 				"     each(match(true()), $$ = first($$))) ~> RemoveDuplicates",
 				"RemoveDuplicates select(mapColumn(",
-				"          locationName,",
-				"          locationId,",
-				"          timezone,",
-				"          industry",
+				"          transactionId,",
+				"          lcoationId,",
+				"          clientId,",
+				"          date,",
+				"          timestamp",
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> select1",
-				"TransactionDataFile derive(timezone = 'Europe/Bucharest',",
-				"          industry = 'retail') ~> derivedColumn1",
 				"select1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'parquet',",
@@ -123,10 +103,11 @@
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
 				"     mapColumn(",
-				"          locationName,",
-				"          locationId,",
-				"          timezone,",
-				"          industry",
+				"          transactionId,",
+				"          lcoationId,",
+				"          clientId,",
+				"          date,",
+				"          timestamp",
 				"     )) ~> OutputParquet"
 			]
 		}
