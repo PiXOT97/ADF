@@ -13,6 +13,13 @@
 						"type": "DatasetReference"
 					},
 					"name": "TransactionDataFile"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_main_ParquetPath",
+						"type": "DatasetReference"
+					},
+					"name": "ExitingLocationFile"
 				}
 			],
 			"sinks": [
@@ -75,6 +82,10 @@
 				"     validateSchema: true,",
 				"     ignoreNoFilesFound: false,",
 				"     format: 'parquet') ~> TransactionDataFile",
+				"source(allowSchemaDrift: false,",
+				"     validateSchema: true,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'parquet') ~> ExitingLocationFile",
 				"derivedColumn1 select(mapColumn(",
 				"          locationName = store_name,",
 				"          locationId = store_id,",
@@ -83,7 +94,7 @@
 				"     ),",
 				"     skipDuplicateMapInputs: false,",
 				"     skipDuplicateMapOutputs: false) ~> DropAndRename",
-				"DropAndRename union(byName: true)~> JoinExitingAndNew",
+				"DropAndRename, ExitingLocationFile union(byName: true)~> JoinExitingAndNew",
 				"JoinExitingAndNew aggregate(groupBy(hashcolumn = sha2(256,locationId)),",
 				"     each(match(true()), $$ = first($$))) ~> RemoveDuplicates",
 				"RemoveDuplicates select(mapColumn(",
