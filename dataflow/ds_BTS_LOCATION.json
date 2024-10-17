@@ -121,7 +121,13 @@
 				"     preCommands: [],",
 				"     postCommands: [],",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> OutputParquet"
+				"     skipDuplicateMapOutputs: true,",
+				"     mapColumn(",
+				"          locationName,",
+				"          locationId,",
+				"          timezone,",
+				"          industry",
+				"     )) ~> OutputParquet"
 			]
 		}
 	}
