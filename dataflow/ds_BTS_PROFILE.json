@@ -1,5 +1,5 @@
 {
-	"name": "ds_BTS_CLIENT",
+	"name": "ds_BTS_PROFILE",
 	"properties": {
 		"folder": {
 			"name": "ds_PROFI/ds_BTS"
@@ -19,7 +19,7 @@
 						"referenceName": "ds_main_ParquetPath",
 						"type": "DatasetReference"
 					},
-					"name": "ExitingClientFile"
+					"name": "ExitingPROFILEFile"
 				}
 			],
 			"sinks": [
@@ -91,7 +91,7 @@
 				"     allowSchemaDrift: false,",
 				"     validateSchema: true,",
 				"     ignoreNoFilesFound: false,",
-				"     format: 'parquet') ~> ExitingClientFile",
+				"     format: 'parquet') ~> ExitingPROFILEFile",
 				"derivedColumn1 select(mapColumn(",
 				"          locationName = store_name,",
 				"          locationId = store_id,",
@@ -100,7 +100,7 @@
 				"     ),",
 				"     skipDuplicateMapInputs: false,",
 				"     skipDuplicateMapOutputs: false) ~> DropAndRename",
-				"DropAndRename, ExitingClientFile union(byName: true)~> JoinExitingAndNew",
+				"DropAndRename, ExitingPROFILEFile union(byName: true)~> JoinExitingAndNew",
 				"JoinExitingAndNew aggregate(groupBy(hashcolumn = sha2(256,locationId)),",
 				"     each(match(true()), $$ = first($$))) ~> RemoveDuplicates",
 				"RemoveDuplicates select(mapColumn(",

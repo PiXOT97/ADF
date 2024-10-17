@@ -216,11 +216,11 @@
 									}
 								},
 								{
-									"name": "ds_BTS_LOCATION_copy1",
+									"name": "ds_BTS_CLIENT",
 									"type": "ExecuteDataFlow",
 									"dependsOn": [
 										{
-											"activity": "LOCATION_InputToProc_copy1",
+											"activity": "PROFILE_InputToProc",
 											"dependencyConditions": [
 												"Succeeded"
 											]
@@ -236,14 +236,8 @@
 									"userProperties": [],
 									"typeProperties": {
 										"dataflow": {
-											"referenceName": "ds_BTS_LOCATION",
+											"referenceName": "ds_BTS_PROFILE",
 											"type": "DataFlowReference",
-											"parameters": {
-												"file_to_processs": {
-													"value": "'@{pipeline().parameters.file_to_process}'",
-													"type": "Expression"
-												}
-											},
 											"datasetParameters": {
 												"TransactionDataFile": {
 													"Container": {
@@ -252,13 +246,6 @@
 													},
 													"FilePath": {
 														"value": "@concat(pipeline().parameters.path_b_input,'/',pipeline().parameters.file_to_process)",
-														"type": "Expression"
-													}
-												},
-												"ExitingLocationFile": {
-													"Container": "@pipeline().parameters.path_container",
-													"FilePath": {
-														"value": "@pipeline().parameters.path_s_location_processed",
 														"type": "Expression"
 													}
 												},
@@ -282,7 +269,7 @@
 									}
 								},
 								{
-									"name": "LOCATION_InputToProc_copy1",
+									"name": "PROFILE_InputToProc",
 									"type": "Copy",
 									"dependsOn": [
 										{
@@ -368,7 +355,7 @@
 									"type": "Delete",
 									"dependsOn": [
 										{
-											"activity": "ds_BTS_LOCATION_copy1",
+											"activity": "ds_BTS_CLIENT",
 											"dependencyConditions": [
 												"Succeeded"
 											]
