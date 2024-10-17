@@ -28,8 +28,6 @@
 								{
 									"name": "ds_BTS_LOCATION",
 									"type": "ExecuteDataFlow",
-									"state": "Inactive",
-									"onInactiveMarkAs": "Succeeded",
 									"dependsOn": [
 										{
 											"activity": "LOCATION_InputToProc",
@@ -96,8 +94,6 @@
 								{
 									"name": "LOCATION_InputToProc",
 									"type": "Copy",
-									"state": "Inactive",
-									"onInactiveMarkAs": "Succeeded",
 									"dependsOn": [
 										{
 											"activity": "SALES_FILE",
@@ -180,8 +176,6 @@
 								{
 									"name": "LOCATION_ClearProc",
 									"type": "Delete",
-									"state": "Inactive",
-									"onInactiveMarkAs": "Succeeded",
 									"dependsOn": [
 										{
 											"activity": "ds_BTS_LOCATION",
@@ -224,8 +218,6 @@
 								{
 									"name": "ds_BTS_PROFILE",
 									"type": "ExecuteDataFlow",
-									"state": "Inactive",
-									"onInactiveMarkAs": "Succeeded",
 									"dependsOn": [
 										{
 											"activity": "PROFILE_InputToProc",
@@ -260,6 +252,13 @@
 													},
 													"FilePath": {
 														"value": "@concat(pipeline().parameters.path_b_input,'/',pipeline().parameters.file_to_process)",
+														"type": "Expression"
+													}
+												},
+												"ExistingProfileFile": {
+													"Container": "@pipeline().parameters.path_container",
+													"FilePath": {
+														"value": "@pipeline().parameters.path_s_profile_processed",
 														"type": "Expression"
 													}
 												},
@@ -367,8 +366,6 @@
 								{
 									"name": "PROFILE_ClearProc",
 									"type": "Delete",
-									"state": "Inactive",
-									"onInactiveMarkAs": "Succeeded",
 									"dependsOn": [
 										{
 											"activity": "ds_BTS_PROFILE",
@@ -437,14 +434,8 @@
 									"userProperties": [],
 									"typeProperties": {
 										"dataflow": {
-											"referenceName": "ds_BTS_LOCATION",
+											"referenceName": "ds_BTS_TRANSACTION",
 											"type": "DataFlowReference",
-											"parameters": {
-												"file_to_processs": {
-													"value": "'@{pipeline().parameters.file_to_process}'",
-													"type": "Expression"
-												}
-											},
 											"datasetParameters": {
 												"TransactionDataFile": {
 													"Container": {
@@ -453,13 +444,6 @@
 													},
 													"FilePath": {
 														"value": "@concat(pipeline().parameters.path_b_input,'/',pipeline().parameters.file_to_process)",
-														"type": "Expression"
-													}
-												},
-												"ExitingLocationFile": {
-													"Container": "@pipeline().parameters.path_container",
-													"FilePath": {
-														"value": "@pipeline().parameters.path_s_location_processed",
 														"type": "Expression"
 													}
 												},

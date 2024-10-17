@@ -42,10 +42,10 @@
 					"name": "RemoveDuplicates"
 				},
 				{
-					"name": "select1"
+					"name": "DropHash"
 				},
 				{
-					"name": "derivedColumn1"
+					"name": "CreateNewColumns"
 				}
 			],
 			"scriptLines": [
@@ -92,7 +92,7 @@
 				"     validateSchema: true,",
 				"     ignoreNoFilesFound: false,",
 				"     format: 'parquet') ~> ExitingLocationFile",
-				"derivedColumn1 select(mapColumn(",
+				"CreateNewColumns select(mapColumn(",
 				"          locationName = store_name,",
 				"          locationId = store_id,",
 				"          timezone,",
@@ -110,10 +110,10 @@
 				"          industry",
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> select1",
+				"     skipDuplicateMapOutputs: true) ~> DropHash",
 				"TransactionDataFile derive(timezone = 'Europe/Bucharest',",
-				"          industry = 'retail') ~> derivedColumn1",
-				"select1 sink(allowSchemaDrift: true,",
+				"          industry = 'retail') ~> CreateNewColumns",
+				"DropHash sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'parquet',",
 				"     truncate: true,",

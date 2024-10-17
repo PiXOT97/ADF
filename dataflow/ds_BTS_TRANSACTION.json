@@ -30,9 +30,6 @@
 				},
 				{
 					"name": "CreateNewColumns"
-				},
-				{
-					"name": "FilterNullValues"
 				}
 			],
 			"scriptLines": [
@@ -98,8 +95,7 @@
 				"          transactionFile = toString($file_to_processs),",
 				"          transactionFileDate = currentDate(),",
 				"          receiptId = transaction_id) ~> CreateNewColumns",
-				"DropAndRename filter(!isNull(transactionId) && !isNull(locationId) && !isNull(externalProductId) && !isNull(externalBrandId) && !isNull(quantity) && !isNull(price)) ~> FilterNullValues",
-				"FilterNullValues sink(allowSchemaDrift: true,",
+				"DropAndRename sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'parquet',",
 				"     truncate: true,",

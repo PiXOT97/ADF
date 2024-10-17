@@ -42,7 +42,7 @@
 					"name": "RemoveDuplicates"
 				},
 				{
-					"name": "select1"
+					"name": "DropHash"
 				}
 			],
 			"scriptLines": [
@@ -110,8 +110,8 @@
 				"          timestamp",
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> select1",
-				"select1 sink(allowSchemaDrift: true,",
+				"     skipDuplicateMapOutputs: true) ~> DropHash",
+				"DropHash sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'parquet',",
 				"     truncate: true,",
