@@ -28,6 +28,8 @@
 								{
 									"name": "ds_BTS_LOCATION",
 									"type": "ExecuteDataFlow",
+									"state": "Inactive",
+									"onInactiveMarkAs": "Succeeded",
 									"dependsOn": [
 										{
 											"activity": "LOCATION_InputToProc",
@@ -94,6 +96,8 @@
 								{
 									"name": "LOCATION_InputToProc",
 									"type": "Copy",
+									"state": "Inactive",
+									"onInactiveMarkAs": "Succeeded",
 									"dependsOn": [
 										{
 											"activity": "SALES_FILE",
@@ -176,6 +180,8 @@
 								{
 									"name": "LOCATION_ClearProc",
 									"type": "Delete",
+									"state": "Inactive",
+									"onInactiveMarkAs": "Succeeded",
 									"dependsOn": [
 										{
 											"activity": "ds_BTS_LOCATION",
@@ -216,8 +222,10 @@
 									}
 								},
 								{
-									"name": "ds_BTS_CLIENT",
+									"name": "ds_BTS_PROFILE",
 									"type": "ExecuteDataFlow",
+									"state": "Inactive",
+									"onInactiveMarkAs": "Succeeded",
 									"dependsOn": [
 										{
 											"activity": "PROFILE_InputToProc",
@@ -238,6 +246,12 @@
 										"dataflow": {
 											"referenceName": "ds_BTS_PROFILE",
 											"type": "DataFlowReference",
+											"parameters": {
+												"file_to_processs": {
+													"value": "'@{pipeline().parameters.file_to_process}'",
+													"type": "Expression"
+												}
+											},
 											"datasetParameters": {
 												"TransactionDataFile": {
 													"Container": {
@@ -330,7 +344,7 @@
 													"type": "Expression"
 												},
 												"FilePath": {
-													"value": "@pipeline().parameters.path_s_location_input",
+													"value": "@pipeline().parameters.path_s_profile_input",
 													"type": "Expression"
 												}
 											}
@@ -353,9 +367,11 @@
 								{
 									"name": "PROFILE_ClearProc",
 									"type": "Delete",
+									"state": "Inactive",
+									"onInactiveMarkAs": "Succeeded",
 									"dependsOn": [
 										{
-											"activity": "ds_BTS_CLIENT",
+											"activity": "ds_BTS_PROFILE",
 											"dependencyConditions": [
 												"Succeeded"
 											]
@@ -379,7 +395,7 @@
 													"type": "Expression"
 												},
 												"FilePath": {
-													"value": "@pipeline().parameters.path_s_location_processed",
+													"value": "@pipeline().parameters.path_s_profile_processed",
 													"type": "Expression"
 												}
 											}
@@ -395,6 +411,8 @@
 								{
 									"name": "ds_BTS_TRANSACTION",
 									"type": "ExecuteDataFlow",
+									"state": "Inactive",
+									"onInactiveMarkAs": "Succeeded",
 									"dependsOn": [
 										{
 											"activity": "LOCATION_ClearProc",
