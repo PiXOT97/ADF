@@ -434,6 +434,12 @@
 										"dataflow": {
 											"referenceName": "ds_BTS_TRANSACTION",
 											"type": "DataFlowReference",
+											"parameters": {
+												"file_to_processs": {
+													"value": "'@{pipeline().parameters.file_to_process}'",
+													"type": "Expression"
+												}
+											},
 											"datasetParameters": {
 												"TransactionDataFile": {
 													"Container": {
