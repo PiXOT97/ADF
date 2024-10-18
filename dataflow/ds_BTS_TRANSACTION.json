@@ -94,7 +94,10 @@
 				"TransactionDataFile derive(actionType = 'sales',",
 				"          transactionFile = toString($file_to_processs),",
 				"          transactionFileDate = currentDate(),",
-				"          receiptId = transaction_id) ~> CreateNewColumns",
+				"          receiptId = transaction_id,",
+				"          day = toString(dayOfMonth(toDate(date,\"dd.MM.yyyy\"))),",
+				"          month = toString(month(toDate(date,\"dd.MM.yyyy\"))),",
+				"          year = toString(year(toDate(date,\"dd.MM.yyyy\")))) ~> CreateNewColumns",
 				"DropAndRename sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'parquet',",
@@ -126,6 +129,12 @@
 				"          timestamp,",
 				"          transactionFile,",
 				"          transactionFileDate",
+				"     ),",
+				"     partitionBy('key',",
+				"          0,",
+				"          ERROR_FUNCTION(''),",
+				"          ERROR_FUNCTION(''),",
+				"          ERROR_FUNCTION('')",
 				"     )) ~> OutputParquet"
 			]
 		}
