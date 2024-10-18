@@ -408,8 +408,6 @@
 								{
 									"name": "ds_BTS_TRANSACTION",
 									"type": "ExecuteDataFlow",
-									"state": "Inactive",
-									"onInactiveMarkAs": "Succeeded",
 									"dependsOn": [
 										{
 											"activity": "LOCATION_ClearProc",
