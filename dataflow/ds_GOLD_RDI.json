@@ -18,10 +18,6 @@
 			"sinks": [],
 			"transformations": [],
 			"scriptLines": [
-				"parameters{",
-				"     path_container as string,",
-				"     path_s_transaction_input as string",
-				"}",
 				"source(allowSchemaDrift: false,",
 				"     validateSchema: true,",
 				"     ignoreNoFilesFound: false,",
