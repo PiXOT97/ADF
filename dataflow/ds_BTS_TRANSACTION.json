@@ -36,7 +36,7 @@
 				"parameters{",
 				"     file_to_processs as string,",
 				"     path_container as string,",
-				"     path_s_transaction_input as string",
+				"     path_s_transaction_config as string",
 				"}",
 				"source(output(",
 				"          transaction_id as long,",
