@@ -200,6 +200,10 @@
 									"file_to_process": {
 										"value": "@item().name",
 										"type": "Expression"
+									},
+									"path_s_transaction_config": {
+										"value": "@variables('path_s_transaction_config')",
+										"type": "Expression"
 									}
 								}
 							}
