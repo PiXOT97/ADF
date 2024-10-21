@@ -1,0 +1,28 @@
+{
+	"name": "ds_GOLD_RDI",
+	"properties": {
+		"folder": {
+			"name": "ds_PROFI/ds_GOLD"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_main_ParquetPath",
+						"type": "DatasetReference"
+					},
+					"name": "InputTransactions"
+				}
+			],
+			"sinks": [],
+			"transformations": [],
+			"scriptLines": [
+				"source(allowSchemaDrift: false,",
+				"     validateSchema: true,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'parquet') ~> InputTransactions"
+			]
+		}
+	}
+}
