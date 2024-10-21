@@ -22,6 +22,9 @@
 						"type": "DatasetReference"
 					},
 					"name": "OutputParquet"
+				},
+				{
+					"name": "sink1"
 				}
 			],
 			"transformations": [
@@ -30,6 +33,9 @@
 				},
 				{
 					"name": "CreateNewColumns"
+				},
+				{
+					"name": "FullPath"
 				}
 			],
 			"scriptLines": [
@@ -108,6 +114,8 @@
 				"          day = toString(dayOfMonth(toDate(date,\"dd.MM.yyyy\"))),",
 				"          month = toString(month(toDate(date,\"dd.MM.yyyy\"))),",
 				"          year = toString(year(toDate(date,\"dd.MM.yyyy\")))) ~> CreateNewColumns",
+				"DropAndRename aggregate(groupBy(date),",
+				"     fullPath = ERROR_FUNCTION('')) ~> FullPath",
 				"DropAndRename sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'parquet',",
@@ -153,7 +161,11 @@
 				"          year,",
 				"          month,",
 				"          day",
-				"     )) ~> OutputParquet"
+				"     )) ~> OutputParquet",
+				"FullPath sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink1"
 			]
 		}
 	}
