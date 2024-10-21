@@ -22,9 +22,6 @@
 						"type": "DatasetReference"
 					},
 					"name": "OutputParquet"
-				},
-				{
-					"name": "OutputPath"
 				}
 			],
 			"transformations": [
@@ -35,14 +32,18 @@
 					"name": "CreateNewColumns"
 				},
 				{
-					"name": "FullPath"
+					"name": "UninquePaths"
+				},
+				{
+					"name": "PathColumn"
 				}
 			],
 			"scriptLines": [
 				"parameters{",
 				"     file_to_processs as string,",
 				"     path_container as string,",
-				"     path_s_transaction_config as string",
+				"     path_s_transaction_config as string,",
+				"     path_s_transaction_input as string",
 				"}",
 				"source(output(",
 				"          transaction_id as long,",
@@ -101,9 +102,9 @@
 				"          timestamp,",
 				"          transactionFile,",
 				"          transactionFileDate,",
-				"          day,",
-				"          month,",
-				"          year",
+				"          dayColumn,",
+				"          monthColumn,",
+				"          yearColumn",
 				"     ),",
 				"     skipDuplicateMapInputs: false,",
 				"     skipDuplicateMapOutputs: false) ~> DropAndRename",
@@ -111,11 +112,11 @@
 				"          transactionFile = toString($file_to_processs),",
 				"          transactionFileDate = currentDate(),",
 				"          receiptId = transaction_id,",
-				"          day = toString(dayOfMonth(toDate(date,\"dd.MM.yyyy\"))),",
-				"          month = toString(month(toDate(date,\"dd.MM.yyyy\"))),",
-				"          year = toString(year(toDate(date,\"dd.MM.yyyy\")))) ~> CreateNewColumns",
-				"DropAndRename aggregate(groupBy(date),",
-				"     fullPath = ERROR_FUNCTION('')) ~> FullPath",
+				"          dayColumn = toString(dayOfMonth(toDate(date,\"dd.MM.yyyy\"))),",
+				"          monthColumn = toString(month(toDate(date,\"dd.MM.yyyy\"))),",
+				"          yearColumn = toString(year(toDate(date,\"dd.MM.yyyy\")))) ~> CreateNewColumns",
+				"PathColumn aggregate(groupBy(fullPath)) ~> UninquePaths",
+				"DropAndRename derive(fullPath = concat($path_container,$path_s_transaction_input,'/YearColumn=', monthColumn,'/MonthColumn=', monthColumn, '/DayColumn=', dayColumn)) ~> PathColumn",
 				"DropAndRename sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'parquet',",
@@ -152,20 +153,16 @@
 				"          timestamp,",
 				"          transactionFile,",
 				"          transactionFileDate,",
-				"          day,",
-				"          month,",
-				"          year",
+				"          dayColumn,",
+				"          monthColumn,",
+				"          yearColumn",
 				"     ),",
 				"     partitionBy('key',",
 				"          0,",
 				"          year,",
 				"          month,",
 				"          day",
-				"     )) ~> OutputParquet",
-				"FullPath sink(allowSchemaDrift: true,",
-				"     validateSchema: false,",
-				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> OutputPath"
+				"     )) ~> OutputParquet"
 			]
 		}
 	}

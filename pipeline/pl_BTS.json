@@ -446,6 +446,10 @@
 												"path_s_transaction_config": {
 													"value": "'@{pipeline().parameters.path_s_transaction_config}'",
 													"type": "Expression"
+												},
+												"path_s_transaction_input": {
+													"value": "'@{pipeline().parameters.path_s_transaction_input}'",
+													"type": "Expression"
 												}
 											},
 											"datasetParameters": {
