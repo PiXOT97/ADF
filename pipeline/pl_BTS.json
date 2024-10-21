@@ -472,6 +472,14 @@
 														"value": "@pipeline().parameters.path_s_transaction_input",
 														"type": "Expression"
 													}
+												},
+												"OutputPaths": {
+													"Container": "@pipeline().parameters.path_container",
+													"FilePath": {
+														"value": "@pipeline().parameters.path_s_transaction_config",
+														"type": "Expression"
+													},
+													"File": "'transaction_paths.txt'"
 												}
 											}
 										},
