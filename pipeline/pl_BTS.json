@@ -442,6 +442,10 @@
 												"path_container": {
 													"value": "'@{pipeline().parameters.path_container}'",
 													"type": "Expression"
+												},
+												"path_s_transaction_config": {
+													"value": "'@{pipeline().parameters.path_s_transaction_config}'",
+													"type": "Expression"
 												}
 											},
 											"datasetParameters": {
