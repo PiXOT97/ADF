@@ -18,15 +18,55 @@
 			"sinks": [],
 			"transformations": [
 				{
-					"name": "filter1"
+					"name": "RemoveNull",
+					"description": "Remove Null BrandId,LocationId, TransactionId, SkuId, ProductId"
+				},
+				{
+					"name": "derivedColumn1"
 				}
 			],
 			"scriptLines": [
-				"source(allowSchemaDrift: true,",
+				"source(output(",
+				"          transactionId as long,",
+				"          receiptId as long,",
+				"          actionType as string,",
+				"          locationId as integer,",
+				"          locationName as string,",
+				"          clientId as long,",
+				"          mediumType as string,",
+				"          externalBrandId as integer,",
+				"          brandName as string,",
+				"          externalProductId as integer,",
+				"          productName as string,",
+				"          skuId as integer,",
+				"          skuName as string,",
+				"          barcode as long,",
+				"          paymentMode as string,",
+				"          quantity as double,",
+				"          price as double,",
+				"          discount as double,",
+				"          grossRetailAmt as double,",
+				"          grossTransAmt as double,",
+				"          netRetailAmt as double,",
+				"          netTransAmt as double,",
+				"          date as string,",
+				"          timestamp as string,",
+				"          transactionFile as string,",
+				"          transactionFileDate as date",
+				"     ),",
+				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     ignoreNoFilesFound: false,",
 				"     format: 'parquet') ~> InputTransactions",
-				"InputTransactions filter(ERROR_FUNCTION('')) ~> filter1"
+				"InputTransactions filter(!isNull(transactionId) && !isNan(transactionId) && !isNull(locationId) && !isNan(locationId) && !isNull(externalBrandId) && !isNan(externalBrandId) && !isNull(skuId) && !isNan(skuId) && !isNull(externalProductId) && !isNan(externalProductId) ) ~> RemoveNull",
+				"RemoveNull derive(skuName = iif(isNull(skuName), 'unknown', skuName),",
+				"          brandName = iif(isNull(brandName), 'unknown', brandName),",
+				"          quantity = iif(isNull(quantity), toDouble('0') , quantity),",
+				"          price = iif(isNull(price), toDouble('0') , price),",
+				"          grossRetailAmt = iif(isNull(grossRetailAmt), toDouble('0') , grossRetailAmt),",
+				"          grossTransAmt = iif(isNull(grossTransAmt), toDouble('0') , grossTransAmt),",
+				"          netRetailAmt = iif(isNull(netRetailAmt), toDouble('0') , netRetailAmt),",
+				"          netTransAmt = iif(isNull(netTransAmt), toDouble('0') , netTransAmt)) ~> derivedColumn1"
 			]
 		}
 	}
