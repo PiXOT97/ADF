@@ -203,6 +203,95 @@
 									}
 								}
 							}
+						},
+						{
+							"name": "pl_GOLD_RDI",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "pl_BTS",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "pl_GOLD_RDI",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"path_container": {
+										"value": "@variables('path_container')",
+										"type": "Expression"
+									},
+									"path_s_location_input": {
+										"value": "@variables('path_s_location_input')",
+										"type": "Expression"
+									},
+									"path_s_location_errors": {
+										"value": "@variables('path_s_location_errors')",
+										"type": "Expression"
+									},
+									"path_s_location_processed": {
+										"value": "@variables('path_s_location_processed')",
+										"type": "Expression"
+									},
+									"path_s_profile_input": {
+										"value": "@variables('path_s_profile_input')",
+										"type": "Expression"
+									},
+									"path_s_profile_errors": {
+										"value": "@variables('path_s_profile_errors')",
+										"type": "Expression"
+									},
+									"path_s_profile_processed": {
+										"value": "@variables('path_s_profile_processed')",
+										"type": "Expression"
+									},
+									"path_s_product_input": {
+										"value": "@variables('path_s_product_input')",
+										"type": "Expression"
+									},
+									"path_s_product_errors": {
+										"value": "@variables('path_s_product_errors')",
+										"type": "Expression"
+									},
+									"path_s_product_processed": {
+										"value": "@variables('path_s_product_processed')",
+										"type": "Expression"
+									},
+									"path_s_transaction_input": {
+										"value": "@variables('path_s_transaction_input')",
+										"type": "Expression"
+									},
+									"path_s_transaction_errors": {
+										"value": "@variables('path_s_transaction_errors')",
+										"type": "Expression"
+									},
+									"path_s_transaction_processed": {
+										"value": "@variables('path_s_transaction_processed')",
+										"type": "Expression"
+									},
+									"file_to_process": {
+										"value": "@item().name",
+										"type": "Expression"
+									},
+									"path_g_rdi_input": {
+										"value": "@variables('path_g_rdi_input')",
+										"type": "Expression"
+									},
+									"path_g_rdi_output": {
+										"value": "@variables('path_g_rdi_output')",
+										"type": "Expression"
+									}
+								}
+							}
 						}
 					]
 				}
@@ -284,6 +373,14 @@
 			"path_s_transaction_processed": {
 				"type": "String",
 				"defaultValue": "silver/transaction_data/processed"
+			},
+			"path_g_rdi_input": {
+				"type": "String",
+				"defaultValue": "gold/rdi/input"
+			},
+			"path_g_rdi_output": {
+				"type": "String",
+				"defaultValue": "gold/rdi/output"
 			}
 		},
 		"folder": {

@@ -1,0 +1,761 @@
+{
+	"name": "pl_GOLD_RDI",
+	"properties": {
+		"activities": [
+			{
+				"name": "SleectTransition",
+				"type": "Switch",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"on": {
+						"value": "@{if(contains(toLower(pipeline().parameters.file_to_process), 'sales_data'), 'TransactionFile', if(contains(toLower(pipeline().parameters.file_to_process), 'products'), 'ProductFile', 'Default'))}",
+						"type": "Expression"
+					},
+					"cases": [
+						{
+							"value": "TransactionFile",
+							"activities": [
+								{
+									"name": "SALES_FILE",
+									"type": "Wait",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"waitTimeInSeconds": 1
+									}
+								},
+								{
+									"name": "ds_BTS_LOCATION",
+									"type": "ExecuteDataFlow",
+									"dependsOn": [
+										{
+											"activity": "LOCATION_InputToProc",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataflow": {
+											"referenceName": "ds_BTS_LOCATION",
+											"type": "DataFlowReference",
+											"parameters": {
+												"file_to_processs": {
+													"value": "'@{pipeline().parameters.file_to_process}'",
+													"type": "Expression"
+												}
+											},
+											"datasetParameters": {
+												"TransactionDataFile": {
+													"Container": {
+														"value": "@pipeline().parameters.path_container",
+														"type": "Expression"
+													},
+													"FilePath": {
+														"value": "@concat(pipeline().parameters.path_b_input,'/',pipeline().parameters.file_to_process)",
+														"type": "Expression"
+													}
+												},
+												"ExitingLocationFile": {
+													"Container": "@pipeline().parameters.path_container",
+													"FilePath": {
+														"value": "@pipeline().parameters.path_s_location_processed",
+														"type": "Expression"
+													}
+												},
+												"OutputParquet": {
+													"Container": {
+														"value": "@pipeline().parameters.path_container",
+														"type": "Expression"
+													},
+													"FilePath": {
+														"value": "@pipeline().parameters.path_s_location_input",
+														"type": "Expression"
+													}
+												}
+											}
+										},
+										"integrationRuntime": {
+											"referenceName": "NewIntegrationRuntime",
+											"type": "IntegrationRuntimeReference"
+										},
+										"traceLevel": "Fine"
+									}
+								},
+								{
+									"name": "LOCATION_InputToProc",
+									"type": "Copy",
+									"dependsOn": [
+										{
+											"activity": "SALES_FILE",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "ParquetSource",
+											"storeSettings": {
+												"type": "AzureBlobFSReadSettings",
+												"recursive": true,
+												"wildcardFileName": "*.parquet",
+												"enablePartitionDiscovery": false
+											},
+											"formatSettings": {
+												"type": "ParquetReadSettings"
+											}
+										},
+										"sink": {
+											"type": "ParquetSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings",
+												"copyBehavior": "FlattenHierarchy"
+											},
+											"formatSettings": {
+												"type": "ParquetWriteSettings"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "ds_main_ParquetPath",
+											"type": "DatasetReference",
+											"parameters": {
+												"Container": {
+													"value": "@pipeline().parameters.path_container",
+													"type": "Expression"
+												},
+												"FilePath": {
+													"value": "@pipeline().parameters.path_s_location_input",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "ds_main_ParquetPath",
+											"type": "DatasetReference",
+											"parameters": {
+												"Container": "@pipeline().parameters.path_container",
+												"FilePath": {
+													"value": "@pipeline().parameters.path_s_location_processed",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								},
+								{
+									"name": "LOCATION_ClearProc",
+									"type": "Delete",
+									"dependsOn": [
+										{
+											"activity": "ds_BTS_LOCATION",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataset": {
+											"referenceName": "ds_main_BinaryPath",
+											"type": "DatasetReference",
+											"parameters": {
+												"Container": {
+													"value": "@pipeline().parameters.path_container",
+													"type": "Expression"
+												},
+												"FilePath": {
+													"value": "@pipeline().parameters.path_s_location_processed",
+													"type": "Expression"
+												}
+											}
+										},
+										"enableLogging": false,
+										"storeSettings": {
+											"type": "AzureBlobFSReadSettings",
+											"recursive": true,
+											"enablePartitionDiscovery": false
+										}
+									}
+								},
+								{
+									"name": "ds_BTS_PROFILE",
+									"type": "ExecuteDataFlow",
+									"dependsOn": [
+										{
+											"activity": "PROFILE_InputToProc",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataflow": {
+											"referenceName": "ds_BTS_PROFILE",
+											"type": "DataFlowReference",
+											"parameters": {
+												"file_to_processs": {
+													"value": "'@{pipeline().parameters.file_to_process}'",
+													"type": "Expression"
+												}
+											},
+											"datasetParameters": {
+												"TransactionDataFile": {
+													"Container": {
+														"value": "@pipeline().parameters.path_container",
+														"type": "Expression"
+													},
+													"FilePath": {
+														"value": "@concat(pipeline().parameters.path_b_input,'/',pipeline().parameters.file_to_process)",
+														"type": "Expression"
+													}
+												},
+												"ExistingProfileFile": {
+													"Container": "@pipeline().parameters.path_container",
+													"FilePath": {
+														"value": "@pipeline().parameters.path_s_profile_processed",
+														"type": "Expression"
+													}
+												},
+												"OutputParquet": {
+													"Container": {
+														"value": "@pipeline().parameters.path_container",
+														"type": "Expression"
+													},
+													"FilePath": {
+														"value": "@pipeline().parameters.path_s_profile_input",
+														"type": "Expression"
+													}
+												}
+											}
+										},
+										"integrationRuntime": {
+											"referenceName": "NewIntegrationRuntime",
+											"type": "IntegrationRuntimeReference"
+										},
+										"traceLevel": "Fine"
+									}
+								},
+								{
+									"name": "PROFILE_InputToProc",
+									"type": "Copy",
+									"dependsOn": [
+										{
+											"activity": "SALES_FILE",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "ParquetSource",
+											"storeSettings": {
+												"type": "AzureBlobFSReadSettings",
+												"recursive": true,
+												"wildcardFileName": "*.parquet",
+												"enablePartitionDiscovery": false
+											},
+											"formatSettings": {
+												"type": "ParquetReadSettings"
+											}
+										},
+										"sink": {
+											"type": "ParquetSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings",
+												"copyBehavior": "FlattenHierarchy"
+											},
+											"formatSettings": {
+												"type": "ParquetWriteSettings"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "ds_main_ParquetPath",
+											"type": "DatasetReference",
+											"parameters": {
+												"Container": {
+													"value": "@pipeline().parameters.path_container",
+													"type": "Expression"
+												},
+												"FilePath": {
+													"value": "@pipeline().parameters.path_s_profile_input",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "ds_main_ParquetPath",
+											"type": "DatasetReference",
+											"parameters": {
+												"Container": "@pipeline().parameters.path_container",
+												"FilePath": {
+													"value": "@pipeline().parameters.path_s_profile_processed",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								},
+								{
+									"name": "PROFILE_ClearProc",
+									"type": "Delete",
+									"dependsOn": [
+										{
+											"activity": "ds_BTS_PROFILE",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataset": {
+											"referenceName": "ds_main_BinaryPath",
+											"type": "DatasetReference",
+											"parameters": {
+												"Container": {
+													"value": "@pipeline().parameters.path_container",
+													"type": "Expression"
+												},
+												"FilePath": {
+													"value": "@pipeline().parameters.path_s_profile_processed",
+													"type": "Expression"
+												}
+											}
+										},
+										"enableLogging": false,
+										"storeSettings": {
+											"type": "AzureBlobFSReadSettings",
+											"recursive": true,
+											"enablePartitionDiscovery": false
+										}
+									}
+								},
+								{
+									"name": "ds_BTS_TRANSACTION",
+									"type": "ExecuteDataFlow",
+									"dependsOn": [
+										{
+											"activity": "LOCATION_ClearProc",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										},
+										{
+											"activity": "PROFILE_ClearProc",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataflow": {
+											"referenceName": "ds_BTS_TRANSACTION",
+											"type": "DataFlowReference",
+											"parameters": {
+												"file_to_processs": {
+													"value": "'@{pipeline().parameters.file_to_process}'",
+													"type": "Expression"
+												}
+											},
+											"datasetParameters": {
+												"TransactionDataFile": {
+													"Container": {
+														"value": "@pipeline().parameters.path_container",
+														"type": "Expression"
+													},
+													"FilePath": {
+														"value": "@concat(pipeline().parameters.path_b_input,'/',pipeline().parameters.file_to_process)",
+														"type": "Expression"
+													}
+												},
+												"OutputParquet": {
+													"Container": {
+														"value": "@pipeline().parameters.path_container",
+														"type": "Expression"
+													},
+													"FilePath": {
+														"value": "@pipeline().parameters.path_s_transaction_input",
+														"type": "Expression"
+													}
+												}
+											}
+										},
+										"integrationRuntime": {
+											"referenceName": "NewIntegrationRuntime",
+											"type": "IntegrationRuntimeReference"
+										},
+										"traceLevel": "Fine"
+									}
+								}
+							]
+						},
+						{
+							"value": "ProductFile",
+							"activities": [
+								{
+									"name": "PROD_FILE",
+									"type": "Wait",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"waitTimeInSeconds": 1
+									}
+								},
+								{
+									"name": "ds_BTS_PRODUCT",
+									"type": "ExecuteDataFlow",
+									"dependsOn": [
+										{
+											"activity": "PRODUCT_InputToPr",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataflow": {
+											"referenceName": "ds_BTS_PRODUCT",
+											"type": "DataFlowReference",
+											"parameters": {
+												"file_to_processs": {
+													"value": "'@{pipeline().parameters.file_to_process}'",
+													"type": "Expression"
+												}
+											},
+											"datasetParameters": {
+												"ProductDataFile": {
+													"Container": {
+														"value": "@pipeline().parameters.path_container",
+														"type": "Expression"
+													},
+													"FilePath": {
+														"value": "@concat(pipeline().parameters.path_b_input,'/',pipeline().parameters.file_to_process)",
+														"type": "Expression"
+													}
+												},
+												"ExistingProductFile": {
+													"Container": "@pipeline().parameters.path_container",
+													"FilePath": {
+														"value": "@pipeline().parameters.path_s_product_processed",
+														"type": "Expression"
+													}
+												},
+												"OutputParquet": {
+													"Container": {
+														"value": "@pipeline().parameters.path_container",
+														"type": "Expression"
+													},
+													"FilePath": {
+														"value": "@pipeline().parameters.path_s_product_input",
+														"type": "Expression"
+													}
+												}
+											}
+										},
+										"integrationRuntime": {
+											"referenceName": "NewIntegrationRuntime",
+											"type": "IntegrationRuntimeReference"
+										},
+										"traceLevel": "Fine"
+									}
+								},
+								{
+									"name": "PRODUCT_InputToPr",
+									"type": "Copy",
+									"dependsOn": [
+										{
+											"activity": "PROD_FILE",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "ParquetSource",
+											"storeSettings": {
+												"type": "AzureBlobFSReadSettings",
+												"recursive": true,
+												"wildcardFileName": "*.parquet",
+												"enablePartitionDiscovery": false
+											},
+											"formatSettings": {
+												"type": "ParquetReadSettings"
+											}
+										},
+										"sink": {
+											"type": "ParquetSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings",
+												"copyBehavior": "FlattenHierarchy"
+											},
+											"formatSettings": {
+												"type": "ParquetWriteSettings"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "ds_main_ParquetPath",
+											"type": "DatasetReference",
+											"parameters": {
+												"Container": {
+													"value": "@pipeline().parameters.path_container",
+													"type": "Expression"
+												},
+												"FilePath": "@pipeline().parameters.path_s_product_input"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "ds_main_ParquetPath",
+											"type": "DatasetReference",
+											"parameters": {
+												"Container": "@pipeline().parameters.path_container",
+												"FilePath": {
+													"value": "@pipeline().parameters.path_s_product_processed",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								},
+								{
+									"name": "PRODUCT_ClearProc",
+									"type": "Delete",
+									"dependsOn": [
+										{
+											"activity": "ds_BTS_PRODUCT",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataset": {
+											"referenceName": "ds_main_BinaryPath",
+											"type": "DatasetReference",
+											"parameters": {
+												"Container": {
+													"value": "@pipeline().parameters.path_container",
+													"type": "Expression"
+												},
+												"FilePath": {
+													"value": "@pipeline().parameters.path_s_product_processed",
+													"type": "Expression"
+												}
+											}
+										},
+										"enableLogging": false,
+										"storeSettings": {
+											"type": "AzureBlobFSReadSettings",
+											"recursive": true,
+											"enablePartitionDiscovery": false
+										}
+									}
+								}
+							]
+						}
+					],
+					"defaultActivities": [
+						{
+							"name": "WRONG_FILE",
+							"type": "Wait",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"waitTimeInSeconds": 1
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"path_container": {
+				"type": "String",
+				"defaultValue": "vendor"
+			},
+			"path_s_location_input": {
+				"type": "String",
+				"defaultValue": "silver/location_data/input"
+			},
+			"path_s_location_errors": {
+				"type": "String",
+				"defaultValue": "silver/location_data/errors"
+			},
+			"path_s_location_processed": {
+				"type": "String",
+				"defaultValue": "silver/location_data/processed"
+			},
+			"path_s_profile_input": {
+				"type": "String",
+				"defaultValue": "silver/profile_data/input"
+			},
+			"path_s_profile_errors": {
+				"type": "String",
+				"defaultValue": "silver/profile_data/errors"
+			},
+			"path_s_profile_processed": {
+				"type": "String",
+				"defaultValue": "silver/profile_data/processed"
+			},
+			"path_s_product_input": {
+				"type": "String",
+				"defaultValue": "silver/product_data/input"
+			},
+			"path_s_product_errors": {
+				"type": "String",
+				"defaultValue": "silver/product_data/errors"
+			},
+			"path_s_product_processed": {
+				"type": "String",
+				"defaultValue": "silver/product_data/processed"
+			},
+			"path_s_transaction_input": {
+				"type": "String",
+				"defaultValue": "silver/transaction_data/input"
+			},
+			"path_s_transaction_errors": {
+				"type": "String",
+				"defaultValue": "silver/transaction_data/errors"
+			},
+			"path_s_transaction_processed": {
+				"type": "String",
+				"defaultValue": "silver/transaction_data/processed"
+			},
+			"file_to_process": {
+				"type": "string"
+			},
+			"path_g_rdi_input": {
+				"type": "string",
+				"defaultValue": "gold/rdi/input"
+			},
+			"path_g_rdi_output": {
+				"type": "string",
+				"defaultValue": "gold/rdi/output"
+			}
+		},
+		"folder": {
+			"name": "pl_PROFI/pl_RDI"
+		},
+		"annotations": []
+	}
+}
