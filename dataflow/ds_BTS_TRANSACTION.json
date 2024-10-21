@@ -24,7 +24,7 @@
 					"name": "OutputParquet"
 				},
 				{
-					"name": "sink1"
+					"name": "OutputPath"
 				}
 			],
 			"transformations": [
@@ -165,7 +165,7 @@
 				"FullPath sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> sink1"
+				"     skipDuplicateMapOutputs: true) ~> OutputPath"
 			]
 		}
 	}
