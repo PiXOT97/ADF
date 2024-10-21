@@ -438,6 +438,10 @@
 												"file_to_processs": {
 													"value": "'@{pipeline().parameters.file_to_process}'",
 													"type": "Expression"
+												},
+												"path_container": {
+													"value": "'@{pipeline().parameters.path_container}'",
+													"type": "Expression"
 												}
 											},
 											"datasetParameters": {
