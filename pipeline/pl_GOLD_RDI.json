@@ -5,7 +5,16 @@
 			{
 				"name": "ds_GOLD_RDI",
 				"type": "ExecuteDataFlow",
-				"dependsOn": [],
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [
+					{
+						"activity": "GetPaths",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
 					"timeout": "0.12:00:00",
 					"retry": 0,
@@ -24,6 +33,48 @@
 						"type": "IntegrationRuntimeReference"
 					},
 					"traceLevel": "Fine"
+				}
+			},
+			{
+				"name": "GetPaths",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "ds_main_TXTFile",
+						"type": "DatasetReference",
+						"parameters": {
+							"Container": {
+								"value": "@pipeline().parameters.path_container",
+								"type": "Expression"
+							},
+							"FilePath": {
+								"value": "@pipeline().parameters.path_s_transaction_config",
+								"type": "Expression"
+							},
+							"File": "trsancation_paths.txt"
+						}
+					},
+					"firstRowOnly": false
 				}
 			}
 		],
@@ -79,9 +130,6 @@
 			"path_s_transaction_processed": {
 				"type": "String",
 				"defaultValue": "silver/transaction_data/processed"
-			},
-			"file_to_process": {
-				"type": "string"
 			},
 			"path_g_rdi_input": {
 				"type": "string",
