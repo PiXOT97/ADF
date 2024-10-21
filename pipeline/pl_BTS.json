@@ -759,6 +759,10 @@
 			},
 			"file_to_process": {
 				"type": "string"
+			},
+			"path_s_transaction_config": {
+				"type": "string",
+				"defaultValue": "silver/transaction_data/config"
 			}
 		},
 		"folder": {
