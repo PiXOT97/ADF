@@ -90,6 +90,10 @@
 			"path_g_rdi_output": {
 				"type": "string",
 				"defaultValue": "gold/rdi/output"
+			},
+			"path_s_transaction_config": {
+				"type": "string",
+				"defaultValue": "silver/transaction_data/config"
 			}
 		},
 		"folder": {
