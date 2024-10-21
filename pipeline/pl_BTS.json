@@ -28,6 +28,8 @@
 								{
 									"name": "ds_BTS_LOCATION",
 									"type": "ExecuteDataFlow",
+									"state": "Inactive",
+									"onInactiveMarkAs": "Succeeded",
 									"dependsOn": [
 										{
 											"activity": "LOCATION_InputToProc",
@@ -94,6 +96,8 @@
 								{
 									"name": "LOCATION_InputToProc",
 									"type": "Copy",
+									"state": "Inactive",
+									"onInactiveMarkAs": "Succeeded",
 									"dependsOn": [
 										{
 											"activity": "SALES_FILE",
@@ -176,6 +180,8 @@
 								{
 									"name": "LOCATION_ClearProc",
 									"type": "Delete",
+									"state": "Inactive",
+									"onInactiveMarkAs": "Succeeded",
 									"dependsOn": [
 										{
 											"activity": "ds_BTS_LOCATION",
@@ -218,6 +224,8 @@
 								{
 									"name": "ds_BTS_PROFILE",
 									"type": "ExecuteDataFlow",
+									"state": "Inactive",
+									"onInactiveMarkAs": "Succeeded",
 									"dependsOn": [
 										{
 											"activity": "PROFILE_InputToProc",
@@ -284,6 +292,8 @@
 								{
 									"name": "PROFILE_InputToProc",
 									"type": "Copy",
+									"state": "Inactive",
+									"onInactiveMarkAs": "Succeeded",
 									"dependsOn": [
 										{
 											"activity": "SALES_FILE",
@@ -366,6 +376,8 @@
 								{
 									"name": "PROFILE_ClearProc",
 									"type": "Delete",
+									"state": "Inactive",
+									"onInactiveMarkAs": "Succeeded",
 									"dependsOn": [
 										{
 											"activity": "ds_BTS_PROFILE",
