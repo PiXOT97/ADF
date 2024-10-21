@@ -3,7 +3,7 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Data flow1",
+				"name": "ds_GOLD_RDI",
 				"type": "ExecuteDataFlow",
 				"dependsOn": [],
 				"policy": {
@@ -15,9 +15,23 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"compute": {
-						"coreCount": 8,
-						"computeType": "General"
+					"dataflow": {
+						"referenceName": "ds_GOLD_RDI",
+						"type": "DataFlowReference",
+						"parameters": {
+							"path_container": {
+								"value": "'@{pipeline().parameters.path_container}'",
+								"type": "Expression"
+							},
+							"path_s_transaction_input": {
+								"value": "'@{pipeline().parameters.path_s_transaction_input}'",
+								"type": "Expression"
+							}
+						}
+					},
+					"integrationRuntime": {
+						"referenceName": "NewIntegrationRuntime",
+						"type": "IntegrationRuntimeReference"
 					},
 					"traceLevel": "Fine"
 				}
