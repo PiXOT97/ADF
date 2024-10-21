@@ -124,7 +124,7 @@
 				"          yearColumn = toString(year(toDate(date,\"dd.MM.yyyy\")))) ~> CreateNewColumns",
 				"PathColumn aggregate(groupBy(fullPath),",
 				"     count = count(transactionId)) ~> UninquePaths",
-				"DropAndRename derive(fullPath = concat($path_container,'/',$path_s_transaction_input,'/yearColumn=', yearColumn,'/monthColumn=', monthColumn, '/dayColumn=', dayColumn)) ~> PathColumn",
+				"DropAndRename derive(fullPath = concat($path_s_transaction_input,'/yearColumn=', yearColumn,'/monthColumn=', monthColumn, '/dayColumn=', dayColumn)) ~> PathColumn",
 				"DropAndRename sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'parquet',",

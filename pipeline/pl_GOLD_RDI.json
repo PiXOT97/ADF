@@ -65,16 +65,7 @@
 						{
 							"name": "ds_GOLD_RDI",
 							"type": "ExecuteDataFlow",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
-							"dependsOn": [
-								{
-									"activity": "Set variable1",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
+							"dependsOn": [],
 							"policy": {
 								"timeout": "0.12:00:00",
 								"retry": 0,
@@ -86,30 +77,25 @@
 							"typeProperties": {
 								"dataflow": {
 									"referenceName": "ds_GOLD_RDI",
-									"type": "DataFlowReference"
+									"type": "DataFlowReference",
+									"datasetParameters": {
+										"InputTransactions": {
+											"Container": {
+												"value": "@pipeline().parameters.path_container",
+												"type": "Expression"
+											},
+											"FilePath": {
+												"value": "@item().fullPath",
+												"type": "Expression"
+											}
+										}
+									}
 								},
 								"integrationRuntime": {
 									"referenceName": "NewIntegrationRuntime",
 									"type": "IntegrationRuntimeReference"
 								},
 								"traceLevel": "Fine"
-							}
-						},
-						{
-							"name": "Set variable1",
-							"type": "SetVariable",
-							"dependsOn": [],
-							"policy": {
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"variableName": "TEST",
-								"value": {
-									"value": "@item().fullPath",
-									"type": "Expression"
-								}
 							}
 						}
 					]
