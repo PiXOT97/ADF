@@ -282,10 +282,6 @@
 										"value": "@variables('path_s_transaction_processed')",
 										"type": "Expression"
 									},
-									"file_to_process": {
-										"value": "@item().name",
-										"type": "Expression"
-									},
 									"path_g_rdi_input": {
 										"value": "@variables('path_g_rdi_input')",
 										"type": "Expression"
@@ -302,6 +298,9 @@
 			}
 		],
 		"variables": {
+			"123": {
+				"type": "Array"
+			},
 			"path_container": {
 				"type": "String",
 				"defaultValue": "vendor"

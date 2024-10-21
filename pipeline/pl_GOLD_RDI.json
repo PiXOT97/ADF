@@ -3,39 +3,6 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "ds_GOLD_RDI",
-				"type": "ExecuteDataFlow",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
-				"dependsOn": [
-					{
-						"activity": "GetPaths",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"dataflow": {
-						"referenceName": "ds_GOLD_RDI",
-						"type": "DataFlowReference"
-					},
-					"integrationRuntime": {
-						"referenceName": "NewIntegrationRuntime",
-						"type": "IntegrationRuntimeReference"
-					},
-					"traceLevel": "Fine"
-				}
-			},
-			{
 				"name": "GetPaths",
 				"type": "Lookup",
 				"dependsOn": [],
@@ -75,6 +42,77 @@
 						}
 					},
 					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "GetPaths",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('GetPaths').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "ds_GOLD_RDI",
+							"type": "ExecuteDataFlow",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [
+								{
+									"activity": "Set variable1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataflow": {
+									"referenceName": "ds_GOLD_RDI",
+									"type": "DataFlowReference"
+								},
+								"integrationRuntime": {
+									"referenceName": "NewIntegrationRuntime",
+									"type": "IntegrationRuntimeReference"
+								},
+								"traceLevel": "Fine"
+							}
+						},
+						{
+							"name": "Set variable1",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "TEST",
+								"value": {
+									"value": "@item().fullPath",
+									"type": "Expression"
+								}
+							}
+						}
+					]
 				}
 			}
 		],
@@ -142,6 +180,11 @@
 			"path_s_transaction_config": {
 				"type": "string",
 				"defaultValue": "silver/transaction_data/config"
+			}
+		},
+		"variables": {
+			"TEST": {
+				"type": "String"
 			}
 		},
 		"folder": {
