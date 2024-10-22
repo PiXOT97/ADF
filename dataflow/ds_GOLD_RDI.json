@@ -20,6 +20,9 @@
 				{
 					"name": "RemoveNull",
 					"description": "Remove Null BrandId,LocationId, TransactionId, SkuId, ProductId"
+				},
+				{
+					"name": "AddColumns"
 				}
 			],
 			"scriptLines": [
@@ -55,7 +58,13 @@
 				"     validateSchema: false,",
 				"     ignoreNoFilesFound: false,",
 				"     format: 'parquet') ~> InputTransactions",
-				"InputTransactions filter(!isNull(transactionId) && !isNan(transactionId) && !isNull(locationId) && !isNan(locationId) && !isNull(externalBrandId) && !isNan(externalBrandId) && !isNull(skuId) && !isNan(skuId) && !isNull(externalProductId) && !isNan(externalProductId) ) ~> RemoveNull"
+				"InputTransactions filter(!isNull(transactionId) && !isNan(transactionId) && \r",
+				"!isNull(locationId) && !isNan(locationId) && \r",
+				"!isNull(externalBrandId) && !isNan(externalBrandId) && \r",
+				"!isNull(skuId) && !isNan(skuId) && \r",
+				"!isNull(externalProductId) && !isNan(externalProductId) &&\r",
+				"quantity >= 0) ~> RemoveNull",
+				"RemoveNull derive(isPromotion = iif(discount>0,1,0)) ~> AddColumns"
 			]
 		}
 	}
