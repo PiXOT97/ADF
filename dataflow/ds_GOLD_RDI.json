@@ -64,7 +64,8 @@
 				"!isNull(skuId) && !isNan(skuId) && \r",
 				"!isNull(externalProductId) && !isNan(externalProductId) &&\r",
 				"quantity >= 0) ~> RemoveNull",
-				"RemoveNull derive(isPromotion = iif(discount>0,1,0)) ~> AddColumns"
+				"RemoveNull derive(isPromotion = iif(discount>0,1,0),",
+				"          transactionDate = toTimestamp(concat(date, ' ', timestamp), 'dd.MM.yyyy HH:mm:ss')) ~> AddColumns"
 			]
 		}
 	}
