@@ -23,6 +23,24 @@
 				},
 				{
 					"name": "AddColumns"
+				},
+				{
+					"name": "RankByQty"
+				},
+				{
+					"name": "MaxTransactionPerSku"
+				},
+				{
+					"name": "JoinRankandMaxTransaction"
+				},
+				{
+					"name": "CalcQuantityPercentageRank"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "stringify1"
 				}
 			],
 			"scriptLines": [
@@ -65,7 +83,27 @@
 				"!isNull(externalProductId) && !isNan(externalProductId) &&\r",
 				"quantity >= 0) ~> RemoveNull",
 				"RemoveNull derive(isPromotion = iif(discount>0,1,0),",
-				"          transactionDate = toTimestamp(concat(date, ' ', timestamp), 'dd.MM.yyyy HH:mm:ss')) ~> AddColumns"
+				"          transactionDate = toTimestamp(concat(date, ' ', timestamp), 'dd.MM.yyyy HH:mm:ss')) ~> AddColumns",
+				"InputTransactions window(over(skuId),",
+				"     asc(quantity, true),",
+				"     rowNumberQuantity = rowNumber()) ~> RankByQty",
+				"RankByQty aggregate(groupBy(skuId),",
+				"     totalTransactionsSku = count(rowNumberQuantity)) ~> MaxTransactionPerSku",
+				"RankByQty, MaxTransactionPerSku join(InputTransactions@skuId == MaxTransactionPerSku@skuId,",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> JoinRankandMaxTransaction",
+				"JoinRankandMaxTransaction derive(rankPercentageQuantity = (rowNumberQuantity-1)/(totalTransactionsSku-1),",
+				"          q1Quantity = 0.25 * (totalTransactionsSku - 1),",
+				"          q3Quantity = 0.75 * (totalTransactionsSku - 1)) ~> CalcQuantityPercentageRank",
+				"CalcQuantityPercentageRank derive(q1Floor = floor(q1Quantity),",
+				"          q1Ceil = ceil(q1Quantity),",
+				"          q1Fraction = q1Quantity- floor(q1Quantity),",
+				"          q3Floor = floor(q3Quantity),",
+				"          q3Ceil = ceil(q3Quantity),",
+				"          q3Fraction = q3Quantity- floor(q3Quantity)) ~> derivedColumn1",
+				"MaxTransactionPerSku stringify(format: 'json') ~> stringify1"
 			]
 		}
 	}
